@@ -5,51 +5,42 @@
 
 Initial decision boundary after pre-training:  
 
-![1D-initial-tensorflow]
-(./assets/1D-initial-tensorflow.png)
+![1D-initial-tensorflow](./assets/1D-initial-tensorflow.png)
 
 Training loss:  
 
-![1D-loss-tensorflow]
-(./assets/1D-loss-tensorflow.png)
+![1D-loss-tensorflow](./assets/1D-loss-tensorflow.png)
 
 Result:  
 
-![1D-result-tensorflow]
-(./assets/1D-result-tensorflow.png)
+![1D-result-tensorflow](./assets/1D-result-tensorflow.png)
 
 
 #### In pytorch - 1D Gaussian(mu, sigma = 1.0, 1.0)
 
 Initial decision boundary after pre-training:  
 
-![1D-initial-pytorch]
-(./assets/1D-initial-pytorch.png)
+![1D-initial-pytorch](./assets/1D-initial-pytorch.png)
 
 Training loss:  
 
-![1D-loss-pytorch]
-(./assets/1D-loss-pytorch.png)
+![1D-loss-pytorch](./assets/1D-loss-pytorch.png)
 
 Result:  
 
-![1D-result-pytorch]
-(./assets/11D-result-pytorch.png)
+![1D-result-pytorch](./assets/11D-result-pytorch.png)
 
 
 #### In tensorflow - 1D Mixture of Gaussian(mu1, sigma1, mu2, sigma2 = -3.0, 1.0, 3.0, 1.0)
 
 Initial decision boundary after pre-training:  
 
-![1D-Mixture-initial-tensorflow]
-(./assets/1D-Mixture-initial-tensorflow.png)
+![1D-Mixture-initial-tensorflow](./assets/1D-Mixture-initial-tensorflow.png)
 
 Training loss:  
 
-![1D-Mixture-loss-tensorflow]
-(./assets/1D-Mixture-loss-tensorflow.png)
+![1D-Mixture-loss-tensorflow](./assets/1D-Mixture-loss-tensorflow.png)
 
 Result:  
 
-![1D-result-tensorflow]
-(./assets/1D-Mixture-result-tensorflow.png)
+![1D-result-tensorflow](./assets/1D-Mixture-result-tensorflow.png)
