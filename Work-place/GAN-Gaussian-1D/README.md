@@ -1,8 +1,6 @@
 # GAN(Generative Adversarial Network) with 1D Gaussian distribution
 
-## In tensorflow - 1D Gaussian 
-* mu, sigma = 1.0, 1.5
-
+## In tensorflow - 1D Gaussian(mu, sigma = 1.0, 1.5)
 * Initial decision boundary after pre-training
 ![alt text](./assets/1D-initial-tensorflow.png "1D-initial-tensorflow")
 
@@ -13,9 +11,18 @@
 ![alt text](./assets/1D-result-tensorflow.png "1D-result-tensorflow")
 
 
-## In tensorflow - 1D Mixture of Gaussian 
-* mu1, sigma1, mu2, sigma2 = -3.0, 1.0, 3.0, 1.0
+## In pytorch - 1D Gaussian(mu, sigma = 1.0, 1.0) - _under construction_
+* Initial decision boundary after pre-training
+![alt text](./assets/1D-initial-pytorch.png "1D-initial-pytorch")
 
+* Training loss
+![alt text](./assets/1D-loss-pytorch.png "1D-loss-pytorch")
+
+* Result
+![alt text](./assets/11D-result-pytorch.png "1D-result-pytorch")
+
+
+## In tensorflow - 1D Mixture of Gaussian(mu1, sigma1, mu2, sigma2 = -3.0, 1.0, 3.0, 1.0)
 * Initial decision boundary after pre-training
 ![alt text](./assets/1D-Mixture-initial-tensorflow.png "1D-Mixture-initial-tensorflow")
 
@@ -24,3 +31,5 @@
 
 * Result
 ![alt text](./assets/1D-Mixture-result-tensorflow.png "1D-result-tensorflow")
+
+
