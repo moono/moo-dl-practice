@@ -28,7 +28,7 @@ Training loss:
 
 Result:  
 
-![1D-result-pytorch](./assets/11D-result-pytorch.png)
+![1D-result-pytorch](./assets/1D-result-pytorch.png)
 
 
 #### In tensorflow - 1D Mixture of Gaussian(mu1, sigma1, mu2, sigma2 = -3.0, 1.0, 3.0, 1.0)
