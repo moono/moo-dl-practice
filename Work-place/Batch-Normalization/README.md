@@ -4,13 +4,13 @@
 ### Train Accuracies
 
 * With or without batch normalization (normal init)
-![w-wo](assets/accuracy-with-without-batch-norm.PNG)
+![w-wo](assets/accuracy-with-without-batch-norm.png)
 
 * With batch normalization
-![with](assets/accuracy-with-batch-norm.PNG)
+![with](assets/accuracy-with-batch-norm.png)
 
 * Without batch normalization
-![without](assets/accuracy-without-batch-norm.PNG)
+![without](assets/accuracy-without-batch-norm.png)
 
 ### Logits and Activation layer
 
