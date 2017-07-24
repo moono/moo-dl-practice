@@ -1,5 +1,18 @@
 # Weight init schemes & batch normalization
-## Trying MNIST data set on one or two layer with different weight initialization scheme and batch normalization
+## Trying MNIST data set on one layer with different weight initialization scheme and batch normalization
+
+### Train Accuracies
+
+* With or without batch normalization (normal init)
+![w-wo](assets/accuracy-with-without-batch-norm.PNG)
+
+* With batch normalization
+![with](assets/accuracy-with-batch-norm.PNG)
+
+* Without batch normalization
+![without](assets/accuracy-without-batch-norm.PNG)
+
+### Logits and Activation layer
 
 * With normal initialization
 
@@ -16,3 +29,6 @@
 * With he initialization
 
 ![he](assets/he-histogram.PNG)
+
+## Reference code
+[hwalsuk.lee](https://github.com/hwalsuklee/tensorflow-mnist-MLP-batch_normalization-weight_initializers)
