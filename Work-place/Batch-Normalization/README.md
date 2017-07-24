@@ -15,4 +15,4 @@
 
 * With he initialization
 
-![he](assets/nohermal-histogram.PNG)
+![he](assets/he-histogram.PNG)
