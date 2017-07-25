@@ -1,0 +1,375 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"dats",
+				"dataset_dir\tstatement"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "DCGAN-celebA.py",
+			"settings":
+			{
+				"buffer_size": 12793,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "DCGAN-celebA.sublime-project",
+			"settings":
+			{
+				"buffer_size": 522,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
+			"settings":
+			{
+				"buffer_size": 20919,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Anaconda Python Builder",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Anaconda Python Builder",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Anaconda Python Builder",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 81.0,
+		"last_filter": "anaconda enable",
+		"selected_items":
+		[
+			[
+				"anaconda enable",
+				"Anaconda: Enable linting on this file"
+			],
+			[
+				"anaconda dis",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"anaconda test",
+				"Anaconda: Run Current File Tests"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"color",
+				"Colorsublime: Install Theme"
+			]
+		],
+		"width": 400.0
+	},
+	"console":
+	{
+		"height": 170.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA"
+	],
+	"file_history":
+	[
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/helper.py",
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.sublime-workspace",
+		"/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.sublime-project",
+		"/D/test1/tensorflow-gpu-proj.sublime-workspace",
+		"/D/test1/tensorflow-gpu-proj.sublime-project",
+		"/D/test1/dcgan-celeba.py",
+		"/D/git-repos/tensorflow-gpu-proj.sublime-workspace",
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/dcgan-celeba.py",
+		"/D/git-repos/tensorflow-gpu-proj.sublime-project",
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-MNIST/DCGAN-MNIST.ipynb",
+		"/C/Sublime Text Build 3126 x64/Data/Packages/User/Python.sublime-settings",
+		"/C/Sublime Text Build 3126 x64/Data/Packages/User/Anaconda.sublime-settings",
+		"/D/git-repos/moo-dl-practice/Work-place/Batch-Normalization/README.md",
+		"/D/git-repos/my-dl/README.md",
+		"/C/Users/moono.song/Downloads/run_main.py",
+		"/D/git-repos/moo-dl-practice/Work-place/Batch-Normalization/logs/.gitignore",
+		"/D/git-repos/moo-dl-practice/.gitignore",
+		"/D/git-repos/moo-dl-practice/Work-place/.gitignore",
+		"/D/git-repos/my-dl/GAN-lesson-05/dcgan-svhn/.gitignore",
+		"/D/git-repos/moo-dl-practice/Work-place/Data_sets/.gitignore",
+		"/D/gan-intro-master/gan.py"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"pep8",
+			"anaconda",
+			"python",
+			"hist"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "DCGAN-celebA.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12793,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1215,
+								1215
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 456.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "DCGAN-celebA.sublime-project",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 522,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								440,
+								440
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 20919,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11566,
+								11566
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 5655.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 27.0
+	},
+	"input":
+	{
+		"height": 35.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 417.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "DCGAN-celebA.sublime-project",
+	"replace":
+	{
+		"height": 50.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 154.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
