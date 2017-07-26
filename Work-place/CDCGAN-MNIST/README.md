@@ -1,5 +1,8 @@
 # Conditional DCGAN on MNIST
 
+## Reference
+http://wiseodd.github.io/techblog/2016/12/24/conditional-gan-tensorflow/
+
 ## Training result 
 Generated images on training
 
