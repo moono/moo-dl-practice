@@ -1,0 +1,23 @@
+{
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"C:\\Users\\moono.song\\AppData\\Local\\conda\\conda\\envs\\tensorflow-gpu\\python.exe\" -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"file_include_patterns": "*.py",
+			"follow_symlinks": true,
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"python_interpreter": "C:\\Users\\moono.song\\AppData\\Local\\conda\\conda\\envs\\tensorflow-gpu\\python.exe"
+	}
+}
