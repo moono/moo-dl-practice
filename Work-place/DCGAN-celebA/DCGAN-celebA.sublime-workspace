@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"get",
+				"get_labels_by_attr_name\tfunction"
+			],
+			[
+				"attr",
+				"attr_names\tstatement"
+			],
+			[
+				"read",
+				"readline\tfunction"
+			],
+			[
+				"join",
+				"joined_path\tstatement"
+			],
+			[
 				"dats",
 				"dataset_dir\tstatement"
 			]
@@ -12,30 +28,12 @@
 	"buffers":
 	[
 		{
-			"file": "DCGAN-celebA.py",
+			"file": "tester.py",
 			"settings":
 			{
-				"buffer_size": 12793,
+				"buffer_size": 2106,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "DCGAN-celebA.sublime-project",
-			"settings":
-			{
-				"buffer_size": 522,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
-			"settings":
-			{
-				"buffer_size": 20919,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
 			}
 		}
 	],
@@ -116,10 +114,12 @@
 	],
 	"file_history":
 	[
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.sublime-project",
+		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.py",
+		"/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
+		"/D/git-repos/moo-dl-practice/Work-place/Data_sets/celeba_anno/list_attr_celeba.txt",
 		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/helper.py",
 		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.sublime-workspace",
-		"/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
-		"/D/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/DCGAN-celebA.sublime-project",
 		"/D/test1/tensorflow-gpu-proj.sublime-workspace",
 		"/D/test1/tensorflow-gpu-proj.sublime-project",
 		"/D/test1/dcgan-celeba.py",
@@ -181,19 +181,19 @@
 			[
 				{
 					"buffer": 0,
-					"file": "DCGAN-celebA.py",
+					"file": "tester.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 12793,
+						"buffer_size": 2106,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1215,
-								1215
+								1283,
+								1283
 							]
 						],
 						"settings":
@@ -207,80 +207,16 @@
 								{
 									"characters": ".",
 									"selector": "source.python - string - constant.numeric"
-								},
-								{
-									"characters": ".",
-									"selector": "source.python - string - constant.numeric"
 								}
 							],
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"auto_name": "",
+							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 456.0,
+						"translation.y": 684.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "DCGAN-celebA.sublime-project",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 522,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								440,
-								440
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/C/Sublime Text Build 3126 x64/Data/Packages/Anaconda/Anaconda.sublime-settings",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 20919,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								11566,
-								11566
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 5655.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
 					"type": "text"
 				}
 			]
@@ -319,7 +255,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 417.0
+		"height": 195.0
 	},
 	"output.find_results":
 	{
@@ -367,7 +303,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 154.0,
+	"side_bar_width": 346.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
