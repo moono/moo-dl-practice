@@ -3,15 +3,55 @@
 	{
 		"selected_items":
 		[
+			[
+				"curr",
+				"current_epoch_samples\tstatement"
+			],
+			[
+				"D_loss",
+				"D_losses\tstatement"
+			],
+			[
+				"zero",
+				"zero_grad\tfunction"
+			],
+			[
+				"G_",
+				"G_result\tstatement"
+			],
+			[
+				"BCE",
+				"BCE_loss\tstatement"
+			],
+			[
+				"y_",
+				"y_real_\tstatement"
+			],
+			[
+				"train",
+				"train_loader\tstatement"
+			],
+			[
+				"modu",
+				"module"
+			],
+			[
+				"xa",
+				"xavier_uniform\tfunction"
+			],
+			[
+				"ax",
+				"axes"
+			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "GAN-MNIST-tensorflow.py",
+			"file": "GAN-MNIST-pytorch.py",
 			"settings":
 			{
-				"buffer_size": 483,
+				"buffer_size": 6075,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -94,9 +134,9 @@
 	],
 	"file_history":
 	[
+		"/home/moono/Desktop/Ubuntu Helpful commands.md",
 		"/mnt/my_data/git-repos/moo-dl-practice/Work-place/GAN-MNIST/GAN-MNIST.sublime-project",
 		"/home/moono/.config/sublime-text-3/Packages/Anaconda/Anaconda.sublime-settings",
-		"/home/moono/Desktop/Ubuntu Helpful commands.md",
 		"/mnt/my_data/git-repos/moo-dl-practice/Work-place/DCGAN-MNIST/assets/.gitignore",
 		"/mnt/my_data/git-repos/moo-dl-practice/Work-place/DCGAN-celebA/helper.py",
 		"/mnt/my_data/git-repos/moo-dl-practice/Work-place/DCGAN-MNIST/assets/*",
@@ -123,6 +163,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"batch_size",
 			"export"
 		],
 		"highlight": true,
@@ -146,28 +187,38 @@
 			[
 				{
 					"buffer": 0,
-					"file": "GAN-MNIST-tensorflow.py",
+					"file": "GAN-MNIST-pytorch.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 483,
+						"buffer_size": 6075,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								483,
-								483
+								5701,
+								5701
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"translate_tabs_to_spaces": false
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2550.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -209,7 +260,7 @@
 	"menu_visible": true,
 	"output.exec":
 	{
-		"height": 112.0
+		"height": 312.0
 	},
 	"output.find_results":
 	{
@@ -257,7 +308,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 227.0,
+	"side_bar_width": 226.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{
