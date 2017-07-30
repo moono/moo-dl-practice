@@ -13,7 +13,7 @@ Practicing deep learinig materials that might be used in work place.
 ```shell
 # Windows
 conda create -n tf-pytorch python=3.5
-source activate tf-pytorch
+activate tf-pytorch
 pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/windows/gpu/tensorflow_gpu-1.2.1-cp35-cp35m-win_amd64.whl
 conda install -c peterjc123 pytorch
 ```
