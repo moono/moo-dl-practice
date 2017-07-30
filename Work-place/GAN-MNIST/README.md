@@ -2,7 +2,7 @@
 
 ## Network at a glance
 **Generator**
-![G](./assets/GANs-MNIST-G.png =200x)
+![G](./assets/GANs-MNIST-G.png)
 
 **Discriminator**
 ![D](./assets/GANs-MNIST-D.png)
