@@ -3,7 +3,11 @@
 ## Network at a glance
 **Generator**
 
-**DIscriminator**
+![G](./assets/DCGAN-MNIST-G.png)
+
+**Discriminator**
+
+![D](./assets/DCGAN-MNIST-D.png)
 
 ### Training Losses
 
@@ -11,9 +15,8 @@
 
 ### Generated samples via epochs
 
-![by-epochs](./assets/generated_samples_via_epochs_pytorch.png)
-
 ![by-epochs-gif](./assets/DCGAN-MNIST-by-epochs.gif)
+![by-epochs](./assets/generated_samples_via_epochs_pytorch.png)
 
 ### Generated samples with trained model
 
