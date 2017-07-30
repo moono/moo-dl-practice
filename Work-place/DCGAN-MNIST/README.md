@@ -1,11 +1,13 @@
-# GAN on MNIST dataset - tensorflow & pytorch
+# DCGAN on MNIST dataset - tensorflow & pytorch
 
 ## Network at a glance
 **Generator**
-![G](./assets/GANs-MNIST-G.png)
+
+![G](./assets/DCGAN-MNIST-G.png)
 
 **Discriminator**
-![D](./assets/GANs-MNIST-D.png)
+
+![D](./assets/DCGAN-MNIST-D.png)
 
 ### Training Losses
 
@@ -13,6 +15,7 @@
 
 ### Generated samples via epochs
 
+![by-epochs-gif](./assets/DCGAN-MNIST-by-epochs.gif)
 ![by-epochs](./assets/generated_samples_via_epochs_pytorch.png)
 
 ### Generated samples with trained model
