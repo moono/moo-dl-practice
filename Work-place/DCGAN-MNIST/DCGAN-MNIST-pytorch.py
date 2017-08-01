@@ -3,7 +3,9 @@ from torch.nn import init
 from torch.autograd import Variable
 import torchvision
 import matplotlib.pyplot as plt 
-import numpy as np 
+import numpy as np
+import os
+import time
 import imageio
 
 def my_weight_init(m):
@@ -83,6 +85,25 @@ class Discriminator(torch.nn.Module):
 
         return out
 
+# image save function
+def save_generator_output(G, fixed_z, img_str, title):
+    n_images = fixed_z.size()[0]
+    n_rows = np.sqrt(n_images).astype(np.int32)
+    n_cols = np.sqrt(n_images).astype(np.int32)
+    
+    z_ = Variable(fixed_z.cuda())
+    samples = G(z_)
+    samples = samples.cpu().data.numpy()
+
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(5,5), sharey=True, sharex=True)
+    for ax, img in zip(axes.flatten(), samples):
+        ax.axis('off')
+        ax.set_adjustable('box-forced')
+        ax.imshow(img.reshape((28,28)), cmap='Greys_r', aspect='equal')
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.suptitle(title)
+    plt.savefig(img_str)
+    plt.close(fig)
 
 '''
 Parameters
@@ -94,7 +115,7 @@ x_size = image_channels
 z_size = 100
 # n_hidden = 128
 # n_classes = 10
-epochs = 10
+epochs = 30
 batch_size = 64
 learning_rate = 0.0002
 alpha = 0.2
@@ -121,27 +142,9 @@ BCE_loss = torch.nn.BCELoss()
 G_opt = torch.optim.Adam( G.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 D_opt = torch.optim.Adam( D.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 
-# image save function
-def save_generator_output(G, fixed_z, img_str, title):
-    n_images = fixed_z.size()[0]
-    n_rows = np.sqrt(n_images).astype(np.int32)
-    n_cols = np.sqrt(n_images).astype(np.int32)
-
-    sample_z = Variable(fixed_z.cuda())
-    gen_samples = G(sample_z)
-    samples = []
-    for k in range(n_images):
-        samples.append(gen_samples[k, :].cpu().data.numpy())
-    
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(5,5), sharey=True, sharex=True)
-    for ax, img in zip(axes.flatten(), samples):
-        ax.axis('off')
-        ax.set_adjustable('box-forced')
-        ax.imshow(img.reshape((28,28)), cmap='Greys_r', aspect='equal')
-    plt.subplots_adjust(wspace=0, hspace=0)
-    plt.suptitle(title)
-    plt.savefig(img_str)
-    plt.close(fig)
+assets_dir = './assets/'
+if not os.path.isdir(assets_dir):
+    os.mkdir(assets_dir)
 
 '''
 Start training
@@ -150,7 +153,7 @@ step = 0
 samples = []
 losses = []
 fixed_z = torch.Tensor(25, z_size).uniform_(-1, 1)
-
+start_time = time.time()
 for e in range(epochs):
     for x_, _ in train_loader:
         step += 1
@@ -212,10 +215,15 @@ for e in range(epochs):
     image_title = 'epoch {:d}'.format(e)
     save_generator_output(G, fixed_z, image_fn, image_title)
 
-fig1, ax1 = plt.subplots()
+end_time = time.time()
+total_time = end_time - start_time
+print('Elapsed time: ', total_time)
+# 30 epochs: 751.90
+
+fig, ax = plt.subplots()
 losses = np.array(losses)
-plt.plot(losses.T[0], label='Discriminator')
-plt.plot(losses.T[1], label='Generator')
+plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
+plt.plot(losses.T[1], label='Generator', alpha=0.5)
 plt.title("Training Losses")
 plt.legend()
 plt.savefig('./assets/losses_pytorch.png')
