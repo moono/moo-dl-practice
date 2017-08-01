@@ -299,7 +299,7 @@ losses = train(net, epochs, batch_size, celebA_dataset.get_batches, celebA_datas
 end_time = time.time()
 total_time = end_time - start_time
 print('Elapsed time: ', total_time)
-# 20 epochs: 
+# 20 epochs: 9506.39
 
 # plot losses
 fig, ax = plt.subplots()

@@ -17,7 +17,7 @@
 | epochs | tensorflow | pytorch |
 | --- | --- | --- |
 | 0 | ![](./assets/epoch_0_tf.png) | ![](./assets/epoch_0_pytorch.png) |
-| 9 | ![](./assets/epoch_9_tf.png) | ![](./assets/epoch_9_pytorch.png) |
+| 7 | ![](./assets/epoch_7_tf.png) | ![](./assets/epoch_7_pytorch.png) |
+| 15 | ![](./assets/epoch_15_tf.png) | ![](./assets/epoch_15_pytorch.png) |
 | 19 | ![](./assets/epoch_19_tf.png) | ![](./assets/epoch_19_pytorch.png) |
-| 29 | ![](./assets/epoch_29_tf.png) | ![](./assets/epoch_29_pytorch.png) |
 |  | ![](./assets/by_epochs_tf.gif) | ![](./assets/by_epochs_pytorch.gif) |
