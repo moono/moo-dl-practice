@@ -52,7 +52,7 @@ class Discriminator(torch.nn.Module):
 
 # image save function
 def save_generator_output(G, fixed_z, img_str, title):
-    n_images = fixed_z.shape[0]
+    n_images = fixed_z.size()[0]
     n_rows = np.sqrt(n_images).astype(np.int32)
     n_cols = np.sqrt(n_images).astype(np.int32)
     
@@ -115,6 +115,7 @@ step = 0
 samples = []
 losses = []
 fixed_z = torch.Tensor(25, z_size).uniform_(-1, 1)
+start_time = time.time()
 for e in range(epochs):
     for x_, _ in train_loader:
         step += 1
@@ -176,11 +177,10 @@ for e in range(epochs):
     image_title = 'epoch {:d}'.format(e)
     save_generator_output(G, fixed_z, image_fn, image_title)
 
-start_time = time.time()
 end_time = time.time()
 total_time = end_time - start_time
 print('Elapsed time: ', total_time)
-# 30 epochs: 
+# 30 epochs: 183.71
 
 fig, ax = plt.subplots()
 losses = np.array(losses)
