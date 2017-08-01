@@ -1,2 +1,6 @@
 *.pkl
 *.sublime-workspace
+
+# checkpoint files
+checkpoint
+*.ckpt.*
