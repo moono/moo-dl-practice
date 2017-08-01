@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import imageio
 import matplotlib.pyplot as plt
+import time
 
 # get data sets
 import os
@@ -19,7 +20,7 @@ def model_inputs(image_width, image_height, image_channels, z_dim):
     return inputs_real, inputs_z
 
 # our generator
-def generator(z, output_dim, reuse=False, initial_feature_size=1024, alpha=0.2, is_training=True):
+def generator(z, output_dim, reuse=False, initial_feature_size=512, alpha=0.2, is_training=True):
     with tf.variable_scope('generator', reuse=reuse):        
         # try different weight initializer
         # w_init = tf.contrib.layers.variance_scaling_initializer()
@@ -209,32 +210,35 @@ class DCGAN:
         
         self.d_opt, self.g_opt = model_opt(self.d_loss, self.g_loss, learning_rate, beta1)
 
-# image helper function
-def save_generator_output(sess, n_images, input_z, out_channel_dim, image_mode, img_str):
-    """
-    Show example output for the generator
-    :param sess: TensorFlow session
-    :param n_images: Number of Images to display
-    :param input_z: Input Z Tensor
-    :param out_channel_dim: The number of channels in the output image
-    :param image_mode: The mode to use for images ("RGB" or "L")
-    """
-    cmap = None if image_mode == 'RGB' else 'gray'
-    z_dim = input_z.get_shape().as_list()[-1]
-    example_z = np.random.uniform(-1, 1, size=[n_images, z_dim])
+# image save function
+def save_generator_output(sess, fixed_z, input_z, out_channel_dim, img_str, title):
+    n_images = fixed_z.shape[0]
+    n_rows = np.sqrt(n_images).astype(np.int32)
+    n_cols = np.sqrt(n_images).astype(np.int32)
     
     samples = sess.run(
         generator(input_z, out_channel_dim, reuse=True, is_training=False),
-        feed_dict={input_z: example_z})
+        feed_dict={input_z: fixed_z})
     
-    images_grid = helper.images_square_grid(samples, image_mode)
-    plt.imshow(images_grid, cmap=cmap)
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(5,5), sharey=True, sharex=True)
+    for ax, img in zip(axes.flatten(), samples):
+        ax.axis('off')
+        ax.set_adjustable('box-forced')
+        # Scale to 0-255
+        img = (((img - img.min()) * 255) / (img.max() - img.min())).astype(np.uint8)
+        #ax.imshow(img.reshape((64,64,3)), cmap=None, aspect='equal')
+        ax.imshow(img, cmap=None, aspect='equal')
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.suptitle(title)
     plt.savefig(img_str)
+    plt.close(fig)
 
 # actual training function
-def train(net, epochs, batch_size, get_batches, data_shape, data_image_mode, show_n_images, print_every=30):
+def train(net, epochs, batch_size, get_batches, data_shape, print_every=30):
     losses = []
     steps = 0
+
+    fixed_z = np.random.uniform(-1, 1, size=(25, z_size))
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -246,8 +250,8 @@ def train(net, epochs, batch_size, get_batches, data_shape, data_image_mode, sho
                 batch_z = np.random.uniform(-1, 1, size=(batch_size, net.z_size))
 
                 # Run optimizers
-                _ = sess.run(net.d_opt, feed_dict={net.input_real: batch_images, net.input_z: batch_z})
-                _ = sess.run(net.g_opt, feed_dict={net.input_z: batch_z, net.input_real: batch_images})
+                sess.run(net.d_opt, feed_dict={net.input_real: batch_images, net.input_z: batch_z})
+                sess.run(net.g_opt, feed_dict={net.input_z: batch_z, net.input_real: batch_images})
 
                 if steps % print_every == 0:
                     # At the end of each epoch, get the losses and print them out
@@ -261,21 +265,22 @@ def train(net, epochs, batch_size, get_batches, data_shape, data_image_mode, sho
                     losses.append((train_loss_d, train_loss_g))
             
             # save generated images on every epochs
-            image_fn = './assets/DCGAN-celebA-epoch-{:d}.png'.format(e)
-            save_generator_output(sess, show_n_images, net.input_z, data_shape[3], data_image_mode, image_fn)                    
+            image_fn = './assets/epoch_{:d}_tf.png'.format(e)
+            image_title = 'epoch {:d}'.format(e)
+            save_generator_output(sess, fixed_z, net.input_z, data_shape[3], image_fn, image_title)                    
                     
     return losses
 
 
 # hyper parameters
-z_size = 256
+z_size = 100
 learning_rate = 0.0002
 batch_size = 128
-epochs = 30
+epochs = 20
 alpha = 0.2
 beta1 = 0.5
-smooth = 0.1
-show_n_images = 25
+smooth = 0.0
+# show_n_images = 25
 
 # get data
 celebA_dataset = helper.Dataset(glob(os.path.join(dataset_dir, 'img_align_celeba/*.jpg')))
@@ -283,15 +288,18 @@ celebA_dataset = helper.Dataset(glob(os.path.join(dataset_dir, 'img_align_celeba
 # Create the network
 net = DCGAN(celebA_dataset.shape, z_size, learning_rate, alpha=alpha, beta1=beta1, smooth=smooth)
 
-# start training
-losses = train(net, epochs, batch_size, celebA_dataset.get_batches, celebA_dataset.shape, celebA_dataset.image_mode, show_n_images)
+assets_dir = './assets/'
+if not os.path.isdir(assets_dir):
+    os.mkdir(assets_dir)
 
-# create animated gif from result images
-images = []
-for e in range(epochs):
-    image_fn = './assets/DCGAN-celebA-epoch-{:d}.png'.format(e)
-    images.append( imageio.imread(image_fn) )
-imageio.mimsave('./assets/DCGAN-celebA-by-epochs.gif', images, fps=5)
+
+# start training
+start_time = time.time()
+losses = train(net, epochs, batch_size, celebA_dataset.get_batches, celebA_dataset.shape)
+end_time = time.time()
+total_time = end_time - start_time
+print('Elapsed time: ', total_time)
+# 20 epochs: 
 
 # plot losses
 fig, ax = plt.subplots()
@@ -300,4 +308,11 @@ plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
 plt.plot(losses.T[1], label='Generator', alpha=0.5)
 plt.title("Training Losses")
 plt.legend()
-plt.show('hold')
+plt.savefig('./assets/losses_tf.png')
+
+# create animated gif from result images
+images = []
+for e in range(epochs):
+    image_fn = './assets/epoch_{:d}_tf.png'.format(e)
+    images.append( imageio.imread(image_fn) )
+imageio.mimsave('./assets/by_epochs_tf.gif', images, fps=3)
