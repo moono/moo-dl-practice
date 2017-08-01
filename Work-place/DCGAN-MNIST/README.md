@@ -1,23 +1,23 @@
 # DCGAN on MNIST dataset - tensorflow & pytorch
 
 ## Network at a glance
-**Generator**
 
-![G](./assets/DCGAN-MNIST-G.png)
-
-**Discriminator**
-
-![D](./assets/DCGAN-MNIST-D.png)
+| **Generator**, **Discriminator** |
+| --- |
+| ![N](./assets/network_structure.png) |
 
 ### Training Losses
 
-![training-losses](./assets/training_loss_pytorch.png)
+| tensorflow | pytorch |
+| --- | --- |
+| ![](./assets/losses_tf.png) | ![](./assets/losses_pytorch.png) |
 
 ### Generated samples via epochs
 
-![by-epochs-gif](./assets/DCGAN-MNIST-by-epochs.gif)
-![by-epochs](./assets/generated_samples_via_epochs_pytorch.png)
-
-### Generated samples with trained model
-
-![by-epochs](./assets/last_generated_samples_pytorch.png)
+| epochs | tensorflow | pytorch |
+| --- | --- | --- |
+| 0 | ![](./assets/epoch_0_tf.png) | ![](./assets/epoch_0_pytorch.png) |
+| 9 | ![](./assets/epoch_9_tf.png) | ![](./assets/epoch_9_pytorch.png) |
+| 19 | ![](./assets/epoch_19_tf.png) | ![](./assets/epoch_19_pytorch.png) |
+| 29 | ![](./assets/epoch_29_tf.png) | ![](./assets/epoch_29_pytorch.png) |
+|  | ![](./assets/by_epochs_tf.gif) | ![](./assets/by_epochs_pytorch.gif) |

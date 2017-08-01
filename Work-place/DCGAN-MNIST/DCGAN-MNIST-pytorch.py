@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import torchvision
 import matplotlib.pyplot as plt 
 import numpy as np 
-
+import imageio
 
 def my_weight_init(m):
     if isinstance(m, torch.nn.Linear):
@@ -121,12 +121,36 @@ BCE_loss = torch.nn.BCELoss()
 G_opt = torch.optim.Adam( G.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 D_opt = torch.optim.Adam( D.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 
+# image save function
+def save_generator_output(G, fixed_z, img_str, title):
+    n_images = fixed_z.size()[0]
+    n_rows = np.sqrt(n_images).astype(np.int32)
+    n_cols = np.sqrt(n_images).astype(np.int32)
+
+    sample_z = Variable(fixed_z.cuda())
+    gen_samples = G(sample_z)
+    samples = []
+    for k in range(n_images):
+        samples.append(gen_samples[k, :].cpu().data.numpy())
+    
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(5,5), sharey=True, sharex=True)
+    for ax, img in zip(axes.flatten(), samples):
+        ax.axis('off')
+        ax.set_adjustable('box-forced')
+        ax.imshow(img.reshape((28,28)), cmap='Greys_r', aspect='equal')
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.suptitle(title)
+    plt.savefig(img_str)
+    plt.close(fig)
+
 '''
 Start training
 '''
 step = 0
 samples = []
 losses = []
+fixed_z = torch.Tensor(25, z_size).uniform_(-1, 1)
+
 for e in range(epochs):
     for x_, _ in train_loader:
         step += 1
@@ -184,13 +208,9 @@ for e in range(epochs):
                 "Discriminator Loss: {:.4f}...".format(D_loss.data[0]),
                 "Generator Loss: {:.4f}".format(G_loss.data[0])) 
     # Sample from generator as we're training for viewing afterwards
-    sample_z = torch.Tensor(16, z_size).uniform_(-1, 1)
-    sample_z = Variable(sample_z.cuda())
-    gen_samples = G(sample_z)
-    current_epoch_samples = []
-    for k in range(16):
-        current_epoch_samples.append(gen_samples[k, :].cpu().data.numpy())
-    samples.append(current_epoch_samples)
+    image_fn = './assets/epoch_{:d}_pytorch.png'.format(e)
+    image_title = 'epoch {:d}'.format(e)
+    save_generator_output(G, fixed_z, image_fn, image_title)
 
 fig1, ax1 = plt.subplots()
 losses = np.array(losses)
@@ -198,27 +218,11 @@ plt.plot(losses.T[0], label='Discriminator')
 plt.plot(losses.T[1], label='Generator')
 plt.title("Training Losses")
 plt.legend()
+plt.savefig('./assets/losses_pytorch.png')
 
-def view_samples(epoch, samples):
-    fig, axes = plt.subplots(figsize=(7,7), nrows=4, ncols=4, sharey=True, sharex=True)
-    for ax, img in zip(axes.flatten(), samples[epoch]):
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-        ax.imshow(img.reshape((28,28)), cmap='Greys_r')
-    
-    return fig, axes
-
-samples = np.array(samples)
-print(samples.shape)
-fig2, axes2 = view_samples(-1, samples)
-
-rows, cols = 10, 6
-fig3, axes3 = plt.subplots(figsize=(7,12), nrows=rows, ncols=cols, sharex=True, sharey=True)
-
-for sample, ax_row in zip(samples[::int(len(samples)/rows)], axes3):
-    for img, ax in zip(sample[::int(len(sample)/cols)], ax_row):
-        ax.imshow(img.reshape((28,28)), cmap='Greys_r')
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-
-plt.show('hold')
+# create animated gif from result images
+images = []
+for e in range(epochs):
+    image_fn = './assets/epoch_{:d}_pytorch.png'.format(e)
+    images.append( imageio.imread(image_fn) )
+imageio.mimsave('./assets/by_epochs_pytorch.gif', images, fps=3)
