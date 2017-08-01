@@ -2,7 +2,8 @@
 
 ## Network at a glance
 
-**Generator**, **Discriminator**
+| **Generator**, **Discriminator** |
+| --- |
 | ![N](./assets/network_structure.png) |
 
 ### Training Losses
