@@ -1,14 +1,26 @@
-# Conditional DCGAN on MNIST
+# Conditional DCGAN on MNIST - tensorflow & pytorch
 
 ## Reference
 http://wiseodd.github.io/techblog/2016/12/24/conditional-gan-tensorflow/
 
-## Training result 
-Generated images on training
+## Network at a glance
 
-![by-epochs](./assets/cDCGAN-MNIST-result-by-epoch.PNG)
+| **Generator**, **Discriminator** |
+| --- |
+| ![N](./assets/network_structure.png) |
 
-## Generator result
-Generated images on final generator. Keeping the style (fix latent z-vector input to G)
+### Training Losses
 
-![by-styles](./assets/cDCGAN-MNIST-result-by-styles.PNG)
+| tensorflow | pytorch |
+| --- | --- |
+| ![](./assets/losses_tf.png) | ![](./assets/losses_pytorch.png) |
+
+### Generated samples via epochs
+
+| epochs | tensorflow | pytorch |
+| --- | --- | --- |
+| 0 | ![](./assets/epoch_0_tf.png) | ![](./assets/epoch_0_pytorch.png) |
+| 3 | ![](./assets/epoch_3_tf.png) | ![](./assets/epoch_3_pytorch.png) |
+| 6 | ![](./assets/epoch_6_tf.png) | ![](./assets/epoch_6_pytorch.png) |
+| 9 | ![](./assets/epoch_9_tf.png) | ![](./assets/epoch_9_pytorch.png) |
+|  | ![](./assets/by_epochs_tf.gif) | ![](./assets/by_epochs_pytorch.gif) |
