@@ -4,6 +4,9 @@ from torch.autograd import Variable
 import torchvision
 import matplotlib.pyplot as plt 
 import numpy as np 
+import os
+import time
+import imageio
 
 
 def my_weight_init(m):
@@ -15,12 +18,11 @@ def my_weight_init(m):
         init.constant(m.bias.data, 0)
 
 class Generator(torch.nn.Module):
-    def __init__(self, input_size, n_hidden=128, n_output=1, alpha=0.2):
+    def __init__(self, input_size, n_hidden=128, n_output=728, alpha=0.2):
         super().__init__()
         self.alpha = alpha
         self.fc1 = torch.nn.Linear(input_size, n_hidden, bias=True)
-        self.fc2 = torch.nn.Linear(self.fc1.out_features, n_hidden//4, bias=True)
-        self.fc3 = torch.nn.Linear(self.fc2.out_features, n_output, bias=True)
+        self.fc2 = torch.nn.Linear(self.fc1.out_features, n_output, bias=True)
 
         for m in self.modules():
             my_weight_init(m)
@@ -28,8 +30,7 @@ class Generator(torch.nn.Module):
 
     def forward(self, input):
         out = torch.nn.functional.leaky_relu(self.fc1(input), negative_slope=self.alpha)
-        out = torch.nn.functional.leaky_relu(self.fc2(out), negative_slope=self.alpha)
-        out = torch.nn.functional.tanh(self.fc3(out))
+        out = torch.nn.functional.tanh(self.fc2(out))
 
         return out
 
@@ -38,19 +39,36 @@ class Discriminator(torch.nn.Module):
         super().__init__()
         self.alpha = alpha
         self.fc1 = torch.nn.Linear(input_size, n_hidden, bias=True)
-        self.fc2 = torch.nn.Linear(self.fc1.out_features, n_hidden//4, bias=True)
-        self.fc3 = torch.nn.Linear(self.fc2.out_features, n_output, bias=True)
+        self.fc2 = torch.nn.Linear(self.fc1.out_features, n_output, bias=True)
 
         for m in self.modules():
             my_weight_init(m)
 
     def forward(self, input):
         out = torch.nn.functional.leaky_relu(self.fc1(input), negative_slope=self.alpha)
-        out = torch.nn.functional.leaky_relu(self.fc2(out), negative_slope=self.alpha)
-        out = torch.nn.functional.sigmoid(self.fc3(out))
+        out = torch.nn.functional.sigmoid(self.fc2(out))
 
         return out
 
+# image save function
+def save_generator_output(G, fixed_z, img_str, title):
+    n_images = fixed_z.shape[0]
+    n_rows = np.sqrt(n_images).astype(np.int32)
+    n_cols = np.sqrt(n_images).astype(np.int32)
+    
+    z_ = Variable(fixed_z.cuda())
+    samples = G(z_)
+    samples = samples.cpu().data.numpy()
+
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(5,5), sharey=True, sharex=True)
+    for ax, img in zip(axes.flatten(), samples):
+        ax.axis('off')
+        ax.set_adjustable('box-forced')
+        ax.imshow(img.reshape((28,28)), cmap='Greys_r', aspect='equal')
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.suptitle(title)
+    plt.savefig(img_str)
+    plt.close(fig)
 
 '''
 Parameters
@@ -59,9 +77,9 @@ x_size = 28 * 28
 z_size = 100
 n_hidden = 128
 # n_classes = 10
-epochs = 200
+epochs = 30
 batch_size = 128
-learning_rate = 0.0002
+learning_rate = 0.002
 alpha = 0.2
 beta1 = 0.5
 print_every = 50
@@ -86,12 +104,17 @@ BCE_loss = torch.nn.BCELoss()
 G_opt = torch.optim.Adam( G.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 D_opt = torch.optim.Adam( D.parameters(), lr=learning_rate, betas=[beta1, 0.999] )
 
+assets_dir = './assets/'
+if not os.path.isdir(assets_dir):
+    os.mkdir(assets_dir)
+
 '''
 Start training
 '''
 step = 0
 samples = []
 losses = []
+fixed_z = torch.Tensor(25, z_size).uniform_(-1, 1)
 for e in range(epochs):
     for x_, _ in train_loader:
         step += 1
@@ -147,42 +170,29 @@ for e in range(epochs):
             print("Epoch {}/{}...".format(e+1, epochs),
                 "Discriminator Loss: {:.4f}...".format(D_loss.data[0]),
                 "Generator Loss: {:.4f}".format(G_loss.data[0])) 
+    
     # Sample from generator as we're training for viewing afterwards
-    sample_z = torch.Tensor(16, z_size).uniform_(-1, 1)
-    sample_z = Variable(sample_z.cuda())
-    gen_samples = G(sample_z)
-    current_epoch_samples = []
-    for k in range(16):
-        current_epoch_samples.append(gen_samples[k, :].cpu().data.numpy())
-    samples.append(current_epoch_samples)
+    image_fn = './assets/epoch_{:d}_pytorch.png'.format(e)
+    image_title = 'epoch {:d}'.format(e)
+    save_generator_output(G, fixed_z, image_fn, image_title)
 
-fig1, ax1 = plt.subplots()
+start_time = time.time()
+end_time = time.time()
+total_time = end_time - start_time
+print('Elapsed time: ', total_time)
+# 30 epochs: 
+
+fig, ax = plt.subplots()
 losses = np.array(losses)
-plt.plot(losses.T[0], label='Discriminator')
-plt.plot(losses.T[1], label='Generator')
+plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
+plt.plot(losses.T[1], label='Generator', alpha=0.5)
 plt.title("Training Losses")
 plt.legend()
+plt.savefig('./assets/losses_pytorch.png')
 
-def view_samples(epoch, samples):
-    fig, axes = plt.subplots(figsize=(7,7), nrows=4, ncols=4, sharey=True, sharex=True)
-    for ax, img in zip(axes.flatten(), samples[epoch]):
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-        ax.imshow(img.reshape((28,28)), cmap='Greys_r')
-    
-    return fig, axes
-
-samples = np.array(samples)
-print(samples.shape)
-fig2, axes2 = view_samples(-1, samples)
-
-rows, cols = 10, 6
-fig3, axes3 = plt.subplots(figsize=(7,12), nrows=rows, ncols=cols, sharex=True, sharey=True)
-
-for sample, ax_row in zip(samples[::int(len(samples)/rows)], axes3):
-    for img, ax in zip(sample[::int(len(sample)/cols)], ax_row):
-        ax.imshow(img.reshape((28,28)), cmap='Greys_r')
-        ax.xaxis.set_visible(False)
-        ax.yaxis.set_visible(False)
-
-plt.show('hold')
+# create animated gif from result images
+images = []
+for e in range(epochs):
+    image_fn = './assets/epoch_{:d}_pytorch.png'.format(e)
+    images.append( imageio.imread(image_fn) )
+imageio.mimsave('./assets/by_epochs_pytorch.gif', images, fps=3)

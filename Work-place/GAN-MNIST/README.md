@@ -9,17 +9,15 @@
 ### Training Losses
 
 | tensorflow | pytorch |
-| ---------- | ------- |
-| ![](./assets/losses_tf.png) | ![](./assets/training_loss_pytorch.png) |
+| --- | --- |
+| ![](./assets/losses_tf.png) | ![](./assets/losses_pytorch.png) |
 
 ### Generated samples via epochs
 
-| tensorflow | pytorch |
-| ---------- | ------- |
-| ![](./assets/generation_via_epochs_tf.png) | ![](./assets/generated_samples_via_epochs_pytorch.png) |
-
-### Generated samples with trained model
-
-| tensorflow | pytorch |
-| ---------- | ------- |
-| ![](./assets/last_generated.png) | ![](./assets/last_generated_samples_pytorch.png) |
+| epochs | tensorflow | pytorch |
+| --- | --- | --- |
+| 0 | ![](./assets/epoch_0_tf.png) | ![](./assets/epoch_0_pytorch.png) |
+| 9 | ![](./assets/epoch_9_tf.png) | ![](./assets/epoch_9_pytorch.png) |
+| 19 | ![](./assets/epoch_19_tf.png) | ![](./assets/epoch_19_pytorch.png) |
+| 29 | ![](./assets/epoch_29_tf.png) | ![](./assets/epoch_29_pytorch.png) |
+|  | ![](./assets/by_epochs_tf.gif) | ![](./assets/by_epochs_pytorch.gif) |
