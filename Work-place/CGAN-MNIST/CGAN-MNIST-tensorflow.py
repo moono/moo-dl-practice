@@ -38,7 +38,7 @@ def generator(z, y, out_dim, n_units=128, reuse=False, alpha=0.2):
         concatenated_inputs = tf.concat(axis=1, values=[z, y])
         
         h1 = tf.layers.dense(concatenated_inputs, n_units, activation=tf.nn.relu, use_bias=True, kernel_initializer=w_init)
-        # h1 = tf.maximum(alpha * h1, h1) # Leaky ReLU
+        h1 = tf.maximum(alpha * h1, h1) # Leaky ReLU
 
         # Logits and tanh (-1~1) output
         logits = tf.layers.dense(h1, out_dim, activation=None, use_bias=True, kernel_initializer=w_init)
@@ -59,7 +59,7 @@ def discriminator(x, y, n_units=128, reuse=False, alpha=0.2):
         concatenated_inputs = tf.concat(axis=1, values=[x, y])
         
         h1 = tf.layers.dense(concatenated_inputs, n_units, activation=tf.nn.relu, use_bias=True, kernel_initializer=w_init)
-        # h1 = tf.maximum(alpha * h1, h1) # Leaky ReLU
+        h1 = tf.maximum(alpha * h1, h1) # Leaky ReLU
 
         # Logits and sigmoid (0~1) output
         logits = tf.layers.dense(h1, 1, activation=None, use_bias=True, kernel_initializer=w_init)
@@ -142,11 +142,9 @@ Train
 def train(net, epochs, batch_size, x_size, y_size, z_size, print_every=50):
     fixed_z = np.random.uniform(-1, 1, size=(10, z_size))
     # create 0 ~ 9 labels
-    fixed_y = np.zeros(shape=[10, y_size, y_size])
-    c = 0
-    for k in range(fixed_y.shape[0]):
-        fixed_y[k, :, c] = 1
-        c += 1
+    fixed_y = np.zeros(shape=[y_size, 10, y_size])
+    for c in range(y_size):
+        fixed_y[c, :, c] = 1
 
     steps = 0
     losses = []
@@ -213,7 +211,7 @@ losses = train(net, epochs, batch_size, x_size, y_size, z_size)
 end_time = time.time()
 total_time = end_time - start_time
 print('Elapsed time: ', total_time)
-# 30 epochs: 281.72
+# 30 epochs: 285.55
 
 fig, ax = plt.subplots()
 losses = np.array(losses)
