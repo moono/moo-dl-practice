@@ -207,11 +207,10 @@ Train
 def train(net, epochs, batch_size, print_every=50):
     y_size, z_size = net.y_size, net.z_size
     fixed_z = np.random.uniform(-1, 1, size=(10, z_size))
-    fixed_y = np.zeros(shape=[10, y_size, y_size])
-    c = 0
-    for k in range(10):
-        fixed_y[k, :, c] = 1
-        c += 1
+    fixed_y = np.zeros(shape=[y_size, 10, y_size])
+    for c in range(y_size):
+        fixed_y[c, :, c] = 1
+        
     losses = []
     steps = 0
 
