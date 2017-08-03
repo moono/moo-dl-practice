@@ -28,9 +28,12 @@ def model_inputs(image_width, image_height, image_channels, y_dim, z_dim):
 # generator network structure
 def generator(z, y):
     concatenated_inputs = tf.concat(values=[z, y], axis=1)
-    print(concatenated_inputs)
     return concatenated_inputs
 
+def discriminator(x, y_reshaped):
+    concatenated_inputs = tf.concat(axis=3, values=[x, y_reshaped])
+    return concatenated_inputs
+        
 # reshape y into appropriate input to D
 def y_reshaper(y, width, height):
     new_y = np.zeros((y.shape[0], width, height, y.shape[1]))
@@ -45,10 +48,11 @@ image_height = 64
 image_channels = 3
 y_size = 2 # labels: Female or Male
 z_size = 100
-batch_size = 1
+batch_size = 2
 
 input_x, input_y, input_y_reshaped, input_z = model_inputs(image_width, image_height, image_channels, y_size, z_size)
 ggg = generator(input_z, input_y)
+ddd = discriminator(input_x, input_y_reshaped)
 
 
 fixed_z = np.random.uniform(-1, 1, size=(10, z_size))
@@ -66,13 +70,28 @@ y_ = celebA_attr.get_next_batch(batch_size)
 
 # also reshape y for input_y_reshaped placeholder
 y_reshaped_ = y_reshaper(y_, image_width, image_height)
+print('y_reshaped_: ', y_reshaped_.shape)
+# print(y_reshaped_[:,:,0])
+# print(y_reshaped_[:,:,1])
 
 # Sample random noise for G
 z_ = np.random.uniform(-1, 1, size=(batch_size, z_size))
 
-concated = sess.run(ggg, feed_dict={input_z: z_, input_y: y_})
-print(concated)
+concated_g = sess.run(ggg, feed_dict={input_z: z_, input_y: y_})
+concated_d = sess.run(ddd, feed_dict={input_x: x_, input_y_reshaped: y_reshaped_})
 
+print('concated_g: ', concated_g.shape)
+print(concated_g)
+
+print('concated_d: ', concated_d.shape)
+print('batch1')
+print(concated_d[0,:,:,3])
+print(concated_d[0,:,:,4])
+print('batch2')
+print(concated_d[1,:,:,3])
+print(concated_d[1,:,:,4])
+
+print('printing results')
 fig, axes = plt.subplots(nrows=2, ncols=5, figsize=(5, 2), sharey=True, sharex=True)
 for ax_row, y_ in zip(axes, fixed_y):
     samples = sess.run( generator(input_z, input_y), feed_dict={input_y: y_, input_z: fixed_z})
