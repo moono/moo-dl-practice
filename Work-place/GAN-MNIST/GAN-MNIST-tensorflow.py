@@ -107,7 +107,7 @@ class GAN:
         # wipe out previous graphs and make us to start building new graph from here
         tf.reset_default_graph()
         
-        self.input_size = input_size
+        self.input_size, self.z_size = input_size, z_size
 
         self.input_real, self.input_z = model_inputs(input_size, z_size)
         
@@ -120,7 +120,7 @@ class GAN:
 Train
 '''
 def train(net, epochs, batch_size, print_every=50):
-    fixed_z = np.random.uniform(-1, 1, size=(25, z_size))
+    fixed_z = np.random.uniform(-1, 1, size=(25, net.z_size))
 
     losses = []
     steps = 0
@@ -135,11 +135,11 @@ def train(net, epochs, batch_size, print_every=50):
                 batch_x, _ = mnist.train.next_batch(batch_size)
                 
                 # Get images rescale to pass to D
-                batch_images = batch_x.reshape((batch_size, input_size))
+                batch_images = batch_x.reshape((batch_size, net.input_size))
                 batch_images = batch_images*2 -1
                 
                 # Sample random noise for G
-                batch_z = np.random.uniform(-1, 1, size=(batch_size, z_size))
+                batch_z = np.random.uniform(-1, 1, size=(batch_size, net.z_size))
 
                 # Run optimizers
                 sess.run(net.d_opt, feed_dict={net.input_real: batch_images, net.input_z: batch_z})
@@ -163,44 +163,47 @@ def train(net, epochs, batch_size, print_every=50):
 
     return losses
 
+def main():
+    '''
+    hyper parameters
+    '''
+    input_size = 28 * 28  # 28x28 MNIST images flattened
+    z_size = 100
+    learning_rate = 0.002
+    epochs = 30
+    batch_size = 128
+    alpha = 0.2
+    smooth = 0.0
+    beta1 = 0.5
 
-'''
-hyper parameters
-'''
-input_size = 28 * 28 # 28x28 MNIST images flattened
-z_size = 100
-learning_rate = 0.002
-epochs = 30
-batch_size = 128
-alpha = 0.2
-smooth = 0.0
-beta1 = 0.5
+    # Create the network
+    net = GAN(input_size, z_size, learning_rate, alpha=alpha, beta1=beta1)
 
-# Create the network
-net = GAN(input_size, z_size, learning_rate, alpha=alpha, beta1=beta1)
+    assets_dir = './assets/'
+    if not os.path.isdir(assets_dir):
+        os.mkdir(assets_dir)
 
-assets_dir = './assets/'
-if not os.path.isdir(assets_dir):
-    os.mkdir(assets_dir)
+    start_time = time.time()
+    losses = train(net, epochs, batch_size)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print('Elapsed time: ', total_time)
+    # 30 epochs: 94.36
 
-start_time = time.time()
-losses = train(net, epochs, batch_size)
-end_time = time.time()
-total_time = end_time - start_time
-print('Elapsed time: ', total_time)
-# 30 epochs: 94.36
+    fig, ax = plt.subplots()
+    losses = np.array(losses)
+    plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
+    plt.plot(losses.T[1], label='Generator', alpha=0.5)
+    plt.title("Training Losses")
+    plt.legend()
+    plt.savefig('./assets/losses_tf.png')
 
-fig, ax = plt.subplots()
-losses = np.array(losses)
-plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
-plt.plot(losses.T[1], label='Generator', alpha=0.5)
-plt.title("Training Losses")
-plt.legend()
-plt.savefig('./assets/losses_tf.png')
+    # create animated gif from result images
+    images = []
+    for e in range(epochs):
+        image_fn = './assets/epoch_{:d}_tf.png'.format(e)
+        images.append(imageio.imread(image_fn))
+    imageio.mimsave('./assets/by_epochs_tf.gif', images, fps=3)
 
-# create animated gif from result images
-images = []
-for e in range(epochs):
-    image_fn = './assets/epoch_{:d}_tf.png'.format(e)
-    images.append( imageio.imread(image_fn) )
-imageio.mimsave('./assets/by_epochs_tf.gif', images, fps=3)
+if __name__ == "__main__":
+    main()
