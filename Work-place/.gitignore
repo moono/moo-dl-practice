@@ -4,3 +4,7 @@
 # checkpoint files
 checkpoint
 *.ckpt.*
+
+# IDE settings
+.idea/
+.vscode/
