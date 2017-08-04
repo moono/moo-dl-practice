@@ -12,6 +12,35 @@ import helper
 
 dataset_dir = '../Data_sets/'
 
+import sklearn.preprocessing as sklp
+
+attrib_fn = os.path.join(dataset_dir, 'celeba_anno/list_attr_celeba_cropped.txt')
+def new_parser(attr_fn):
+    with open(attr_fn, 'r') as f:
+        # parse number of data
+        first_line = f.readline()
+        n_data = int(first_line)
+
+        # parse each attribute names & size
+        second_line = f.readline()
+        attr_names = second_line.split()
+        n_attr = len(attr_names)
+
+    attr_data = np.loadtxt(attr_fn, dtype=int, skiprows=2, usecols=range(1, n_attr + 1))
+
+    attr_index = attr_names.index('Male')
+    single_attr_data = attr_data[:, attr_index]
+
+    lb = sklp.LabelBinarizer()
+    lb.fit([-1, 1])
+    onehot = lb.transform(single_attr_data)
+    print(onehot)
+    print(onehot.shape)
+    # # convert that to 0 & 1
+    # attr_data = (attr_data + 1) // 2
+
+new_parser(attrib_fn)
+
 # get data
 celebA_dataset = helper.Dataset(glob(os.path.join(dataset_dir, 'img_align_celeba/*.jpg')))
 celebA_attr = helper.AttrParserCelebA(os.path.join(dataset_dir, 'celeba_anno/list_attr_celeba.txt'), attr_name='Male')
