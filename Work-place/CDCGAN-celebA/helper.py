@@ -3,26 +3,26 @@ import math
 from PIL import Image
 
 def get_image(image_path, width, height, mode):
-	"""
-	Read image from image_path
-	param image_path: Path of image
-	:param width: Width of image
-	:param height: Height of image
-	:param mode: Mode of image
-	:return: Image data
-	"""
+    """
+    Read image from image_path
+    param image_path: Path of image
+    :param width: Width of image
+    :param height: Height of image
+    :param mode: Mode of image
+    :return: Image data
+    """
 
-	image = Image.open(image_path)
+    image = Image.open(image_path)
 
-	if image.size != (width, height):  # HACK - Check if image is from the CELEBA dataset
-		# Remove most pixels that aren't part of a face
-		face_width = face_height = 108
-		j = (image.size[0] - face_width) // 2
-		i = (image.size[1] - face_height) // 2
-		image = image.crop([j, i, j + face_width, i + face_height])
-		image = image.resize([width, height], Image.BILINEAR)
+    if image.size != (width, height):  # HACK - Check if image is from the CELEBA dataset
+        # Remove most pixels that aren't part of a face
+        face_width = face_height = 108
+        j = (image.size[0] - face_width) // 2
+        i = (image.size[1] - face_height) // 2
+        image = image.crop([j, i, j + face_width, i + face_height])
+        image = image.resize([width, height], Image.BILINEAR)
 
-	return np.array(image.convert(mode))
+    return np.array(image.convert(mode))
 
 
 def get_batch(image_files, width, height, mode):
