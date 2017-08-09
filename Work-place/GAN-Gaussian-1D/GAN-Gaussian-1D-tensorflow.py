@@ -150,10 +150,10 @@ def model_optimizer(d_loss, g_loss, learning_rate, beta1=0.5):
     g_vars = [var for var in t_vars if var.name.startswith('generator')]
     d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
 
-    d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
-    g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
-    # d_train_opt = tf.train.GradientDescentOptimizer(learning_rate).minimize(d_loss, var_list=d_vars)
-    # g_train_opt = tf.train.GradientDescentOptimizer(learning_rate).minimize(g_loss, var_list=g_vars)
+    # d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
+    # g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
+    d_train_opt = tf.train.GradientDescentOptimizer(learning_rate).minimize(d_loss, var_list=d_vars)
+    g_train_opt = tf.train.GradientDescentOptimizer(learning_rate).minimize(g_loss, var_list=g_vars)
     
     return d_train_opt, g_train_opt, d_vars
 
@@ -279,7 +279,7 @@ def main():
     # Parameters
     mu, sigma = 1., 1.5
     data_range = 5
-    learning_rate = 0.001
+    learning_rate = 0.03
     batch_size = 150
     input_size = 1  # Size of input
     z_size = 1  # Size of latent vector to generator
