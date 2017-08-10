@@ -3,9 +3,7 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-# import os
-# import glob
-# from PIL import Image
+import os
 
 from helper import Dataset
 
@@ -149,55 +147,101 @@ def model_loss(gen_inputs, dis_inputs, dis_targets, out_channels, gan_weight=1.0
     gen_loss_L1 = tf.reduce_mean(tf.abs(dis_targets - gen_output))
     g_loss = gen_loss_GAN * gan_weight + gen_loss_L1 * l1_weight
 
-    return d_loss, g_loss
+    return d_loss, gen_loss_GAN, gen_loss_L1, g_loss
 
-def model_opt(d_loss, g_loss, learning_rate, beta1):
+def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
     # Get weights and bias to update
     t_vars = tf.trainable_variables()
     d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
     g_vars = [var for var in t_vars if var.name.startswith('generator')]
 
     # Optimize
+    d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-        d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
         g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
 
     return d_train_opt, g_train_opt
 
-def train(net, epochs, batch_size, train_input_image_dir, print_every=30):
+# def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
+#     discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
+#     discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+#     discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
+#     d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
+#
+#     with tf.control_dependencies([d_train_opt]):
+#         gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
+#         gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+#         gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
+#         g_train_opt = gen_optim.apply_gradients(gen_grads_and_vars)
+#
+#     ema = tf.train.ExponentialMovingAverage(decay=0.99)
+#     update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
+
+def train(net, epochs, batch_size, train_input_image_dir, test_input_image_dir, print_every=30):
     losses = []
     steps = 0
 
     # prepare dataset
-    my_dataset = Dataset(train_input_image_dir)
+    train_dataset = Dataset(train_input_image_dir)
+    test_dataset = Dataset(test_input_image_dir)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for e in range(epochs):
-            for ii in range(my_dataset.n_images//batch_size):
+            for ii in range(train_dataset.n_images//batch_size):
                 steps += 1
 
                 # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
-                batch_images_tuple = my_dataset.get_next_batch(batch_size)
+                batch_images_tuple = train_dataset.get_next_batch(batch_size)
 
                 a = [x for x, y in batch_images_tuple]
                 b = [y for x, y in batch_images_tuple]
                 a = np.array(a)
                 b = np.array(b)
 
-                d_opt_out = sess.run(net.d_train_opt, feed_dict={net.dis_inputs: a, net.dis_targets: b, net.gen_inputs: a})
-                g_opt_out = sess.run(net.g_train_opt, feed_dict={net.dis_inputs: a, net.dis_targets: b, net.gen_inputs: a})
+                fd = {
+                    net.dis_inputs: a,
+                    net.dis_targets: b,
+                    net.gen_inputs: a
+                }
+                d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
+                g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
 
                 if steps % print_every == 0:
                     # At the end of each epoch, get the losses and print them out
-                    train_loss_d = net.d_loss.eval({net.gen_inputs: b, net.dis_inputs: a, net.dis_targets: b})
-                    train_loss_g = net.g_loss.eval({net.gen_inputs: b})
+                    train_loss_d = net.d_loss.eval(fd)
+                    train_loss_g = net.g_loss.eval(fd)
+                    train_loss_GAN = net.gen_loss_GAN.eval(fd)
+                    train_loss_L1 = net.gen_loss_L1.eval(fd)
 
                     print("Epoch {}/{}...".format(e + 1, epochs),
                           "Discriminator Loss: {:.4f}...".format(train_loss_d),
+                          "Generator Loss GAN: {:.4f}".format(train_loss_GAN),
+                          "Generator Loss L1: {:.4f}".format(train_loss_L1),
                           "Generator Loss: {:.4f}".format(train_loss_g))
                     # Save losses to view after training
                     losses.append((train_loss_d, train_loss_g))
+
+            # save generated images on every epochs
+            image_fn = './assets/epoch_{:d}_tf.png'.format(e)
+            image_title = 'epoch {:d}'.format(e)
+            test_image = test_dataset.get_next_batch(1)
+            test_a = [x for x, y in test_image]
+            test_a = np.array(test_a)
+
+            gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=False),
+                                 feed_dict={net.gen_inputs: test_a})
+
+            fig, ax = plt.subplots()
+            gen_image = np.squeeze(gen_image, axis=0)
+
+            # de-normalize
+            # Scale to 0-255
+            gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
+            ax.imshow(gen_image)
+            plt.suptitle(image_title)
+            plt.savefig(image_fn)
+            plt.close(fig)
 
     return losses
 
@@ -212,21 +256,38 @@ class Pix2Pix(object):
 
         # build model
         tf.reset_default_graph()
-        self.gen_inputs, self.dis_inputs, self.dis_targets = model_inputs(self.input_height, self.input_width, self.input_channel)
-        self.d_loss, self.g_loss = model_loss(self.gen_inputs, self.dis_inputs, self.dis_targets, self.input_channel, self.gan_weight, self.l1_weight)
-        self.d_train_opt, self.g_train_opt = model_opt(self.d_loss, self.g_loss, learning_rate, self.beta1)
+        self.gen_inputs, self.dis_inputs, self.dis_targets = model_inputs(self.input_height,
+                                                                          self.input_width,
+                                                                          self.input_channel)
+        self.d_loss, self.gen_loss_GAN, self.gen_loss_L1, self.g_loss = model_loss(self.gen_inputs,
+                                                                                   self.dis_inputs,
+                                                                                   self.dis_targets,
+                                                                                   self.input_channel,
+                                                                                   self.gan_weight,
+                                                                                   self.l1_weight)
+        self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
+                                                       self.gen_loss_GAN,
+                                                       self.gen_loss_L1,
+                                                       self.g_loss,
+                                                       self.learning_rate,
+                                                       self.beta1)
 
 def main():
+    assets_dir = './assets/'
+    if not os.path.isdir(assets_dir):
+        os.mkdir(assets_dir)
+
     # hyper parameters
     learning_rate = 0.0002
-    n_epochs = 1000
+    n_epochs = 200
     batch_size = 2
     pix2pix = Pix2Pix(learning_rate)
 
     train_input_image_dir = '../Data_sets/facades/train/'
-    losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir)
+    test_input_image_dir = '../Data_sets/facades/test/'
+    losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir, test_input_image_dir)
 
-    ig, ax = plt.subplots()
+    fig, ax = plt.subplots()
     losses = np.array(losses)
     plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
     plt.plot(losses.T[1], label='Generator', alpha=0.5)
@@ -252,14 +313,29 @@ def test():
     batch_size = 2
     train_input_image_dir = '../Data_sets/facades/train/'
     my_dataset = Dataset(train_input_image_dir)
-    batch_images_tuple = my_dataset.get_next_batch(batch_size)
+    # batch_images_tuple = my_dataset.get_next_batch(batch_size)
+    #
+    # a = [x for x, y in batch_images_tuple]
+    # b = [y for x, y in batch_images_tuple]
+    # a = np.array(a)
+    # b = np.array(b)
+    # print(a.shape)
+    # print(b.shape)
 
-    a = [x for x, y in batch_images_tuple]
-    b = [y for x, y in batch_images_tuple]
-    a = np.array(a)
-    b = np.array(b)
-    print(a.shape)
-    print(b.shape)
+    steps = 0
+
+    for ii in range(my_dataset.n_images // batch_size):
+        steps += 1
+
+        # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
+        batch_images_tuple = my_dataset.get_next_batch(batch_size)
+
+        a = [x for x, y in batch_images_tuple]
+        b = [y for x, y in batch_images_tuple]
+        a = np.array(a)
+        b = np.array(b)
+        print('a: ', a.shape)
+        print('b: ', b.shape)
 
 if __name__ == '__main__':
     main()
