@@ -2,11 +2,19 @@
 
 import tensorflow as tf
 import numpy as np
-import os
-import glob
-from PIL import Image
+import matplotlib.pyplot as plt
+# import os
+# import glob
+# from PIL import Image
 
 from helper import Dataset
+
+def model_inputs(input_height, input_width, input_channel):
+    gen_inputs = tf.placeholder(tf.float32, [None, input_height, input_width, input_channel], name='gen_inputs')
+    dis_inputs = tf.placeholder(tf.float32, [None, input_height, input_width, input_channel], name='dis_inputs')
+    dis_targets = tf.placeholder(tf.float32, [None, input_height, input_width, input_channel], name='dis_targets')
+
+    return gen_inputs, dis_inputs, dis_targets
 
 def generator(inputs, out_channels, n_first_layer_filter=64, alpha=0.2, reuse=False, is_training=True):
     with tf.variable_scope('generator', reuse=reuse):
@@ -31,9 +39,9 @@ def generator(inputs, out_channels, n_first_layer_filter=64, alpha=0.2, reuse=Fa
             n_first_layer_filter * 8,  # encoder_7: [batch, 4, 4, 512] => [batch, 2, 2, 512]
             n_first_layer_filter * 8,  # encoder_8: [batch, 2, 2, 512] => [batch, 1, 1, 512]
         ]
-        for out_channels in layer_specs:
+        for n_filters in layer_specs:
             layer = tf.maximum(alpha * layers[-1], layers[-1])
-            layer = tf.layers.conv2d(layer, filters=out_channels, kernel_size=4, strides=2, padding='same',
+            layer = tf.layers.conv2d(layer, filters=n_filters, kernel_size=4, strides=2, padding='same',
                                      kernel_initializer=w_init, use_bias=False)
             layer = tf.layers.batch_normalization(inputs=layer, training=is_training)
             layers.append(layer)
@@ -122,33 +130,140 @@ def discriminator(inputs, targets, n_first_layer_filter=64, alpha=0.2, reuse=Fal
 
         return out
 
+def model_loss(gen_inputs, dis_inputs, dis_targets, out_channels, gan_weight=1.0, l1_weight=100.0):
+    # get each model outputs
+    gen_output = generator(gen_inputs, out_channels, reuse=False, is_training=True)
+    predict_real = discriminator(dis_inputs, dis_targets, reuse=False, is_training=True)
+    predict_fake = discriminator(dis_inputs, gen_output, reuse=True, is_training=True)
 
+    # compute loss
+    # minimizing -tf.log will try to get inputs to 1
+    # predict_real => 1
+    # predict_fake => 0
+    eps = 1e-12
+    d_loss = tf.reduce_mean(-(tf.log(predict_real + eps) + tf.log(1 - predict_fake + eps)))
+
+    # predict_fake => 1
+    # abs(targets - outputs) => 0
+    gen_loss_GAN = tf.reduce_mean(-tf.log(predict_fake + eps))
+    gen_loss_L1 = tf.reduce_mean(tf.abs(dis_targets - gen_output))
+    g_loss = gen_loss_GAN * gan_weight + gen_loss_L1 * l1_weight
+
+    return d_loss, g_loss
+
+def model_opt(d_loss, g_loss, learning_rate, beta1):
+    # Get weights and bias to update
+    t_vars = tf.trainable_variables()
+    d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
+    g_vars = [var for var in t_vars if var.name.startswith('generator')]
+
+    # Optimize
+    with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+        d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
+        g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
+
+    return d_train_opt, g_train_opt
+
+def train(net, epochs, batch_size, train_input_image_dir, print_every=30):
+    losses = []
+    steps = 0
+
+    # prepare dataset
+    my_dataset = Dataset(train_input_image_dir)
+
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        for e in range(epochs):
+            for ii in range(my_dataset.n_images//batch_size):
+                steps += 1
+
+                # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
+                batch_images_tuple = my_dataset.get_next_batch(batch_size)
+
+                a = [x for x, y in batch_images_tuple]
+                b = [y for x, y in batch_images_tuple]
+                a = np.array(a)
+                b = np.array(b)
+
+                d_opt_out = sess.run(net.d_train_opt, feed_dict={net.dis_inputs: a, net.dis_targets: b, net.gen_inputs: a})
+                g_opt_out = sess.run(net.g_train_opt, feed_dict={net.dis_inputs: a, net.dis_targets: b, net.gen_inputs: a})
+
+                if steps % print_every == 0:
+                    # At the end of each epoch, get the losses and print them out
+                    train_loss_d = net.d_loss.eval({net.gen_inputs: b, net.dis_inputs: a, net.dis_targets: b})
+                    train_loss_g = net.g_loss.eval({net.gen_inputs: b})
+
+                    print("Epoch {}/{}...".format(e + 1, epochs),
+                          "Discriminator Loss: {:.4f}...".format(train_loss_d),
+                          "Generator Loss: {:.4f}".format(train_loss_g))
+                    # Save losses to view after training
+                    losses.append((train_loss_d, train_loss_g))
+
+    return losses
+
+
+
+class Pix2Pix(object):
+    def __init__(self, learning_rate):
+        self.input_height, self.input_width, self.input_channel = 256, 256, 3
+        self.gan_weight, self.l1_weight = 1.0, 100.0
+        self.beta1 = 0.5
+        self.learning_rate = learning_rate
+
+        # build model
+        tf.reset_default_graph()
+        self.gen_inputs, self.dis_inputs, self.dis_targets = model_inputs(self.input_height, self.input_width, self.input_channel)
+        self.d_loss, self.g_loss = model_loss(self.gen_inputs, self.dis_inputs, self.dis_targets, self.input_channel, self.gan_weight, self.l1_weight)
+        self.d_train_opt, self.g_train_opt = model_opt(self.d_loss, self.g_loss, learning_rate, self.beta1)
 
 def main():
-    train_input_image_dir = '../Data_sets/facades/train/'
+    # hyper parameters
+    learning_rate = 0.0002
+    n_epochs = 1000
+    batch_size = 2
+    pix2pix = Pix2Pix(learning_rate)
 
-    # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
-    my_dataset = Dataset(train_input_image_dir)
-    one_batch = my_dataset.get_next_batch(30)
-    print('number of images: {:d}'.format(len(one_batch)))
+    train_input_image_dir = '../Data_sets/facades/train/'
+    losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir)
+
+    ig, ax = plt.subplots()
+    losses = np.array(losses)
+    plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
+    plt.plot(losses.T[1], label='Generator', alpha=0.5)
+    plt.title("Training Losses")
+    plt.legend()
+    plt.savefig('./assets/losses_tf.png')
 
     return 0
 
 def test():
-    sess = tf.InteractiveSession()
-    t = tf.zeros([64, 64, 64, 128], dtype=tf.float32)
+    # sess = tf.InteractiveSession()
+    # t = tf.zeros([64, 64, 64, 128], dtype=tf.float32)
+    #
+    # w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
+    # # l1 = tf.layers.conv2d(t, filters=512, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init, use_bias=False)
+    # l1 = tf.layers.conv2d_transpose(t, filters=64, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init,
+    #                                 use_bias=False)
+    #
+    # print(l1.shape)
+    #
+    # sess.close()
 
-    w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-    # l1 = tf.layers.conv2d(t, filters=512, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init, use_bias=False)
-    l1 = tf.layers.conv2d_transpose(t, filters=64, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init,
-                                    use_bias=False)
+    batch_size = 2
+    train_input_image_dir = '../Data_sets/facades/train/'
+    my_dataset = Dataset(train_input_image_dir)
+    batch_images_tuple = my_dataset.get_next_batch(batch_size)
 
-    print(l1.shape)
+    a = [x for x, y in batch_images_tuple]
+    b = [y for x, y in batch_images_tuple]
+    a = np.array(a)
+    b = np.array(b)
+    print(a.shape)
+    print(b.shape)
 
-    sess.close()
 if __name__ == '__main__':
-    # main()
-    test()
+    main()
+    # test()
 
 
 
