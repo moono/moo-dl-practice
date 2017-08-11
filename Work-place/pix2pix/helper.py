@@ -48,6 +48,13 @@ class Dataset(object):
 
         return splitted
 
+    def get_image_by_index(self, index):
+        if index >= self.n_images:
+            index = 0
+        current_file = [self.image_files[index]]
+        splitted = self.load_images(current_file)
+        return splitted
+
     def load_images(self, files):
         splitted = []
         for im in files:

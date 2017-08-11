@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import time
 
 from helper import Dataset
 
@@ -64,7 +65,8 @@ def generator(inputs, out_channels, n_first_layer_filter=64, alpha=0.2, reuse=Fa
                 inputs = layers[-1]
             else:
                 inputs = tf.concat([layers[-1], layers[skip_layer]], axis=3)
-            layer = tf.maximum(alpha * inputs, inputs)
+            # layer = tf.maximum(alpha * inputs, inputs)
+            layer = tf.nn.relu(inputs)
             layer = tf.layers.conv2d_transpose(inputs=layer, filters=n_filters, kernel_size=4, strides=2, padding='same')
             layer = tf.layers.batch_normalization(inputs=layer, training=is_training)
 
@@ -76,7 +78,8 @@ def generator(inputs, out_channels, n_first_layer_filter=64, alpha=0.2, reuse=Fa
             layers.append(layer)
 
         # decoder_1: [batch, 128, 128, 64] => [batch, 256, 256, out_channels]
-        last_layer = tf.maximum(alpha * layers[-1], layers[-1])
+        # last_layer = tf.maximum(alpha * layers[-1], layers[-1])
+        last_layer = tf.nn.relu(layers[-1])
         last_layer = tf.layers.conv2d_transpose(inputs=last_layer, filters=out_channels, kernel_size=4, strides=2,
                                                 padding='same')
         out = tf.tanh(last_layer)
@@ -90,8 +93,7 @@ def discriminator(inputs, targets, n_first_layer_filter=64, alpha=0.2, reuse=Fal
         w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
 
         # concatenate inputs
-        # M: batch size
-        # Mx256x256x3 + Mx256x256x3 => Mx256x256x6
+        # [batch, 256, 256, 3] + [batch, 256, 256, 3] => [batch, 256, 256, 6]
         concat_inputs = tf.concat(values=[inputs, targets], axis=3)
 
         # layer_1: [batch, 256, 256, 6] => [batch, 128, 128, 64], without batchnorm
@@ -149,41 +151,73 @@ def model_loss(gen_inputs, dis_inputs, dis_targets, out_channels, gan_weight=1.0
 
     return d_loss, gen_loss_GAN, gen_loss_L1, g_loss
 
-def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
-    # Get weights and bias to update
-    t_vars = tf.trainable_variables()
-    d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
-    g_vars = [var for var in t_vars if var.name.startswith('generator')]
-
-    # Optimize
-    d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
-    with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-        g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
-
-    return d_train_opt, g_train_opt
-
 # def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
-#     discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
-#     discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-#     discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
-#     d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
+#     # Get weights and bias to update
+#     t_vars = tf.trainable_variables()
+#     d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
+#     g_vars = [var for var in t_vars if var.name.startswith('generator')]
 #
-#     with tf.control_dependencies([d_train_opt]):
-#         gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
-#         gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-#         gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
-#         g_train_opt = gen_optim.apply_gradients(gen_grads_and_vars)
+#     # Optimize
+#     d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
+#     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+#         g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
 #
-#     ema = tf.train.ExponentialMovingAverage(decay=0.99)
-#     update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
+#     return d_train_opt, g_train_opt
 
-def train(net, epochs, batch_size, train_input_image_dir, test_input_image_dir, print_every=30):
+def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
+    discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
+    discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+    discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
+    d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
+
+    with tf.control_dependencies([d_train_opt]):
+        gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
+        gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+        gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
+        gen_train = gen_optim.apply_gradients(gen_grads_and_vars)
+
+    ema = tf.train.ExponentialMovingAverage(decay=0.99)
+    update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
+
+    training_op = tf.group(update_losses, gen_train)
+
+    return training_op
+
+def save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
+    # Scale to 0-255
+    gen_image = np.squeeze(gen_image, axis=0)
+    gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
+    concated_image = gen_image
+    if input_image is not None:
+        input_image = np.squeeze(input_image, axis=0)
+        input_image = (((input_image - input_image.min()) * 255) / (input_image.max() - input_image.min())).astype(
+            np.uint8)
+        concated_image = np.concatenate((concated_image, input_image), axis=1)
+    if target_image is not None:
+        target_image = np.squeeze(target_image, axis=0)
+        target_image = (((target_image - target_image.min()) * 255) / (target_image.max() - target_image.min())).astype(
+        np.uint8)
+        concated_image = np.concatenate((concated_image, target_image), axis=1)
+
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    ax.imshow(concated_image)
+
+    # save image
+    plt.savefig(image_fn)
+    if image_title is not None:
+        plt.suptitle(image_title)
+    plt.close(fig)
+
+def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, print_every=30):
     losses = []
     steps = 0
 
+    # prepare saver for saving trained model
+    saver = tf.train.Saver()
+
     # prepare dataset
-    train_dataset = Dataset(train_input_image_dir)
-    test_dataset = Dataset(test_input_image_dir)
+    train_dataset = Dataset(train_input_image_dir, convert_to_lab_color=False, direction=direction)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -204,8 +238,9 @@ def train(net, epochs, batch_size, train_input_image_dir, test_input_image_dir, 
                     net.dis_targets: b,
                     net.gen_inputs: a
                 }
-                d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
-                g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
+                # d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
+                # g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
+                opt_out = sess.run(net.train_opt, feed_dict=fd)
 
                 if steps % print_every == 0:
                     # At the end of each epoch, get the losses and print them out
@@ -220,31 +255,42 @@ def train(net, epochs, batch_size, train_input_image_dir, test_input_image_dir, 
                           "Generator Loss L1: {:.4f}".format(train_loss_L1),
                           "Generator Loss: {:.4f}".format(train_loss_g))
                     # Save losses to view after training
-                    losses.append((train_loss_d, train_loss_g))
+                    losses.append((train_loss_d, train_loss_GAN))
 
             # save generated images on every epochs
-            image_fn = './assets/epoch_{:d}_tf.png'.format(e)
-            image_title = 'epoch {:d}'.format(e)
-            test_image = test_dataset.get_next_batch(1)
             test_a = [x for x, y in test_image]
             test_a = np.array(test_a)
+            gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=False),
+                                 feed_dict={net.gen_inputs: test_a})
+            image_fn = './assets/epoch_{:d}_tf.png'.format(e)
+            image_title = 'epoch {:d}'.format(e)
+            save_result(gen_image, image_fn, image_title)
+
+        saver.save(sess, './checkpoints/pix2pix.ckpt')
+
+    return losses
+
+def test(net, test_input_image_dir, direction):
+    # prepare dataset
+    test_dataset = Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
+
+    saver = tf.train.Saver()
+    with tf.Session() as sess:
+        saver.restore(sess, tf.train.latest_checkpoint('./checkpoints'))
+
+        for ii in range(test_dataset.n_images):
+            test_image = test_dataset.get_image_by_index(ii)
+            test_a = [x for x, y in test_image]
+            test_b = [y for x, y in test_image]
+            test_a = np.array(test_a)
+            test_b = np.array(test_b)
 
             gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=False),
                                  feed_dict={net.gen_inputs: test_a})
 
-            fig, ax = plt.subplots()
-            gen_image = np.squeeze(gen_image, axis=0)
-
-            # de-normalize
-            # Scale to 0-255
-            gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
-            ax.imshow(gen_image)
-            plt.suptitle(image_title)
-            plt.savefig(image_fn)
-            plt.close(fig)
-
-    return losses
-
+            # save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
+            image_fn = './assets/test_result{:d}_tf.png'.format(ii)
+            save_result(gen_image, image_fn, image_title=None, input_image=test_a, target_image=test_b)
 
 
 class Pix2Pix(object):
@@ -265,81 +311,127 @@ class Pix2Pix(object):
                                                                                    self.input_channel,
                                                                                    self.gan_weight,
                                                                                    self.l1_weight)
-        self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
-                                                       self.gen_loss_GAN,
-                                                       self.gen_loss_L1,
-                                                       self.g_loss,
-                                                       self.learning_rate,
-                                                       self.beta1)
+        # self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
+        #                                                self.gen_loss_GAN,
+        #                                                self.gen_loss_L1,
+        #                                                self.g_loss,
+        #                                                self.learning_rate,
+        #                                                self.beta1)
+        self.train_opt = model_opt(self.d_loss,
+                                   self.gen_loss_GAN,
+                                   self.gen_loss_L1,
+                                   self.g_loss,
+                                   self.learning_rate,
+                                   self.beta1)
 
 def main():
     assets_dir = './assets/'
     if not os.path.isdir(assets_dir):
         os.mkdir(assets_dir)
 
+    do_train = True
+
     # hyper parameters
     learning_rate = 0.0002
     n_epochs = 200
-    batch_size = 2
+    batch_size = 1
     pix2pix = Pix2Pix(learning_rate)
 
     train_input_image_dir = '../Data_sets/facades/train/'
     test_input_image_dir = '../Data_sets/facades/test/'
-    losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir, test_input_image_dir)
+    direction = 'BtoA'
 
-    fig, ax = plt.subplots()
-    losses = np.array(losses)
-    plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
-    plt.plot(losses.T[1], label='Generator', alpha=0.5)
-    plt.title("Training Losses")
-    plt.legend()
-    plt.savefig('./assets/losses_tf.png')
+    if do_train:
+        test_dataset = Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
+        test_single_image = test_dataset.get_image_by_index(0)
+
+        start_time = time.time()
+        losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir, test_single_image, direction)
+        end_time = time.time()
+        total_time = end_time - start_time
+        print('Elapsed time: ', total_time)
+        # 200 epochs: 7173.71
+
+
+        fig, ax = plt.subplots()
+        losses = np.array(losses)
+        plt.plot(losses.T[0], label='Discriminator', alpha=0.5)
+        plt.plot(losses.T[1], label='Generator', alpha=0.5)
+        plt.title("Training Losses")
+        plt.legend()
+        plt.savefig('./assets/losses_tf.png')
+    else:
+        test(pix2pix, test_input_image_dir, direction)
 
     return 0
 
-def test():
-    # sess = tf.InteractiveSession()
-    # t = tf.zeros([64, 64, 64, 128], dtype=tf.float32)
-    #
-    # w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-    # # l1 = tf.layers.conv2d(t, filters=512, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init, use_bias=False)
-    # l1 = tf.layers.conv2d_transpose(t, filters=64, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init,
-    #                                 use_bias=False)
-    #
-    # print(l1.shape)
-    #
-    # sess.close()
-
-    batch_size = 2
-    train_input_image_dir = '../Data_sets/facades/train/'
-    my_dataset = Dataset(train_input_image_dir)
-    # batch_images_tuple = my_dataset.get_next_batch(batch_size)
-    #
-    # a = [x for x, y in batch_images_tuple]
-    # b = [y for x, y in batch_images_tuple]
-    # a = np.array(a)
-    # b = np.array(b)
-    # print(a.shape)
-    # print(b.shape)
-
-    steps = 0
-
-    for ii in range(my_dataset.n_images // batch_size):
-        steps += 1
-
-        # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
-        batch_images_tuple = my_dataset.get_next_batch(batch_size)
-
-        a = [x for x, y in batch_images_tuple]
-        b = [y for x, y in batch_images_tuple]
-        a = np.array(a)
-        b = np.array(b)
-        print('a: ', a.shape)
-        print('b: ', b.shape)
+# def test():
+#     # sess = tf.InteractiveSession()
+#     # t = tf.zeros([64, 64, 64, 128], dtype=tf.float32)
+#     #
+#     # w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
+#     # # l1 = tf.layers.conv2d(t, filters=512, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init, use_bias=False)
+#     # l1 = tf.layers.conv2d_transpose(t, filters=64, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init,
+#     #                                 use_bias=False)
+#     #
+#     # print(l1.shape)
+#     #
+#     # sess.close()
+#
+#     batch_size = 1
+#     train_input_image_dir = '../Data_sets/facades/train/'
+#     direction = 'BtoA'
+#     my_dataset = Dataset(train_input_image_dir, direction=direction)
+#     # batch_images_tuple = my_dataset.get_next_batch(batch_size)
+#     #
+#     # a = [x for x, y in batch_images_tuple]
+#     # b = [y for x, y in batch_images_tuple]
+#     # a = np.array(a)
+#     # b = np.array(b)
+#     # print(a.shape)
+#     # print(b.shape)
+#
+#     # steps = 0
+#     #
+#     # for ii in range(my_dataset.n_images // batch_size):
+#     #     steps += 1
+#     #
+#     #     # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
+#     #     batch_images_tuple = my_dataset.get_next_batch(batch_size)
+#     #
+#     #     a = [x for x, y in batch_images_tuple]
+#     #     b = [y for x, y in batch_images_tuple]
+#     #     a = np.array(a)
+#     #     b = np.array(b)
+#     #
+#     #     fig, ax = plt.subplots()
+#     #     # gen_image = a
+#     #     gen_image = np.squeeze(a, axis=0)
+#     #
+#     #     # de-normalize
+#     #     # Scale to 0-255
+#     #     gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
+#     #     ax.imshow(gen_image)
+#
+#     batch_images_tuple = my_dataset.get_next_batch(batch_size)
+#
+#     a = [x for x, y in batch_images_tuple]
+#     b = [y for x, y in batch_images_tuple]
+#     a = np.array(a)
+#     b = np.array(b)
+#
+#     fig, ax = plt.subplots()
+#     # gen_image = a
+#     gen_image = np.squeeze(a, axis=0)
+#
+#     # de-normalize
+#     # Scale to 0-255
+#     gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
+#     ax.imshow(gen_image)
+#     plt.show('hold')
 
 if __name__ == '__main__':
     main()
-    # test()
 
 
 
