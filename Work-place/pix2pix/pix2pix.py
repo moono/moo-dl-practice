@@ -151,37 +151,37 @@ def model_loss(gen_inputs, dis_inputs, dis_targets, out_channels, gan_weight=1.0
 
     return d_loss, gen_loss_GAN, gen_loss_L1, g_loss
 
-# def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
-#     # Get weights and bias to update
-#     t_vars = tf.trainable_variables()
-#     d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
-#     g_vars = [var for var in t_vars if var.name.startswith('generator')]
-#
-#     # Optimize
-#     d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
-#     with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-#         g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
-#
-#     return d_train_opt, g_train_opt
-
 def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
-    discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
-    discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-    discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
-    d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
+    # Get weights and bias to update
+    t_vars = tf.trainable_variables()
+    d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
+    g_vars = [var for var in t_vars if var.name.startswith('generator')]
 
-    with tf.control_dependencies([d_train_opt]):
-        gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
-        gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-        gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
-        gen_train = gen_optim.apply_gradients(gen_grads_and_vars)
+    # Optimize
+    d_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(d_loss, var_list=d_vars)
+    with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
+        g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
 
-    ema = tf.train.ExponentialMovingAverage(decay=0.99)
-    update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
+    return d_train_opt, g_train_opt
 
-    training_op = tf.group(update_losses, gen_train)
-
-    return training_op
+# def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
+#     discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
+#     discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+#     discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
+#     d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
+#
+#     with tf.control_dependencies([d_train_opt]):
+#         gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
+#         gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
+#         gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
+#         gen_train = gen_optim.apply_gradients(gen_grads_and_vars)
+#
+#     ema = tf.train.ExponentialMovingAverage(decay=0.99)
+#     update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
+#
+#     training_op = tf.group(update_losses, gen_train)
+#
+#     return training_op
 
 def save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
     # Scale to 0-255
@@ -204,9 +204,9 @@ def save_result(gen_image, image_fn, image_title=None, input_image=None, target_
     ax.imshow(concated_image)
 
     # save image
-    plt.savefig(image_fn)
     if image_title is not None:
         plt.suptitle(image_title)
+    plt.savefig(image_fn, bbox_inches='tight')
     plt.close(fig)
 
 def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, print_every=30):
@@ -238,9 +238,9 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
                     net.dis_targets: b,
                     net.gen_inputs: a
                 }
-                # d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
-                # g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
-                opt_out = sess.run(net.train_opt, feed_dict=fd)
+                d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
+                g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
+                # opt_out = sess.run(net.train_opt, feed_dict=fd)
 
                 if steps % print_every == 0:
                     # At the end of each epoch, get the losses and print them out
@@ -285,7 +285,7 @@ def test(net, test_input_image_dir, direction):
             test_a = np.array(test_a)
             test_b = np.array(test_b)
 
-            gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=False),
+            gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=True),
                                  feed_dict={net.gen_inputs: test_a})
 
             # save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
@@ -311,25 +311,25 @@ class Pix2Pix(object):
                                                                                    self.input_channel,
                                                                                    self.gan_weight,
                                                                                    self.l1_weight)
-        # self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
-        #                                                self.gen_loss_GAN,
-        #                                                self.gen_loss_L1,
-        #                                                self.g_loss,
-        #                                                self.learning_rate,
-        #                                                self.beta1)
-        self.train_opt = model_opt(self.d_loss,
-                                   self.gen_loss_GAN,
-                                   self.gen_loss_L1,
-                                   self.g_loss,
-                                   self.learning_rate,
-                                   self.beta1)
+        self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
+                                                       self.gen_loss_GAN,
+                                                       self.gen_loss_L1,
+                                                       self.g_loss,
+                                                       self.learning_rate,
+                                                       self.beta1)
+        # self.train_opt = model_opt(self.d_loss,
+        #                            self.gen_loss_GAN,
+        #                            self.gen_loss_L1,
+        #                            self.g_loss,
+        #                            self.learning_rate,
+        #                            self.beta1)
 
 def main():
     assets_dir = './assets/'
     if not os.path.isdir(assets_dir):
         os.mkdir(assets_dir)
 
-    do_train = True
+    do_train = False
 
     # hyper parameters
     learning_rate = 0.0002
@@ -351,6 +351,7 @@ def main():
         total_time = end_time - start_time
         print('Elapsed time: ', total_time)
         # 200 epochs: 7173.71
+        # 200 epochs: 8563.10
 
 
         fig, ax = plt.subplots()
