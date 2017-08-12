@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 
-from helper import Dataset
+import helper
 
 def model_inputs(input_height, input_width, input_channel):
     gen_inputs = tf.placeholder(tf.float32, [None, input_height, input_width, input_channel], name='gen_inputs')
@@ -183,31 +183,8 @@ def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
 #
 #     return training_op
 
-def save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
-    # Scale to 0-255
-    gen_image = np.squeeze(gen_image, axis=0)
-    gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
-    concated_image = gen_image
-    if input_image is not None:
-        input_image = np.squeeze(input_image, axis=0)
-        input_image = (((input_image - input_image.min()) * 255) / (input_image.max() - input_image.min())).astype(
-            np.uint8)
-        concated_image = np.concatenate((concated_image, input_image), axis=1)
-    if target_image is not None:
-        target_image = np.squeeze(target_image, axis=0)
-        target_image = (((target_image - target_image.min()) * 255) / (target_image.max() - target_image.min())).astype(
-        np.uint8)
-        concated_image = np.concatenate((concated_image, target_image), axis=1)
 
-    fig, ax = plt.subplots()
-    ax.axis('off')
-    ax.imshow(concated_image)
 
-    # save image
-    if image_title is not None:
-        plt.suptitle(image_title)
-    plt.savefig(image_fn, bbox_inches='tight')
-    plt.close(fig)
 
 def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, print_every=30):
     losses = []
@@ -217,7 +194,7 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
     saver = tf.train.Saver()
 
     # prepare dataset
-    train_dataset = Dataset(train_input_image_dir, convert_to_lab_color=False, direction=direction)
+    train_dataset = helper.Dataset(train_input_image_dir, convert_to_lab_color=False, direction=direction)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -263,8 +240,7 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
             gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=False),
                                  feed_dict={net.gen_inputs: test_a})
             image_fn = './assets/epoch_{:d}_tf.png'.format(e)
-            image_title = 'epoch {:d}'.format(e)
-            save_result(gen_image, image_fn, image_title)
+            helper.save_result(image_fn, gen_image)
 
         saver.save(sess, './checkpoints/pix2pix.ckpt')
 
@@ -272,7 +248,7 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
 
 def test(net, test_input_image_dir, direction):
     # prepare dataset
-    test_dataset = Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
+    test_dataset = helper.Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
@@ -290,7 +266,7 @@ def test(net, test_input_image_dir, direction):
 
             # save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
             image_fn = './assets/test_result{:d}_tf.png'.format(ii)
-            save_result(gen_image, image_fn, image_title=None, input_image=test_a, target_image=test_b)
+            helper.save_result(image_fn, gen_image, input_image=test_a, target_image=test_b)
 
 
 class Pix2Pix(object):
@@ -340,7 +316,7 @@ def main(do_train=True):
     direction = 'BtoA'
 
     if do_train:
-        test_dataset = Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
+        test_dataset = helper.Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction)
         test_single_image = test_dataset.get_image_by_index(0)
 
         start_time = time.time()

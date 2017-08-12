@@ -2,7 +2,29 @@ import numpy as np
 import os
 import glob
 from PIL import Image
-from scipy.misc import imresize
+from scipy.misc import imresize, toimage
+
+
+def preprocess_for_saving_image(im):
+    if im.shape[0] == 1:
+        im = np.squeeze(im, axis=0)
+
+    # Scale to 0-255
+    im = (((im - im.min()) * 255) / (im.max() - im.min())).astype(np.uint8)
+
+    return im
+
+def save_result(image_fn, gen_image, input_image=None, target_image=None):
+    image_1 = preprocess_for_saving_image(gen_image)
+    concated_image = image_1
+    if input_image is not None:
+        image_2 = preprocess_for_saving_image(input_image)
+        concated_image = np.concatenate((concated_image, image_2), axis=1)
+    if target_image is not None:
+        image_3 = preprocess_for_saving_image(target_image)
+        concated_image = np.concatenate((concated_image, image_3), axis=1)
+
+    toimage(concated_image, mode='RGB').save(image_fn)
 
 # class for loading images & split image of the form [A|B] ==> (A, B)
 class Dataset(object):
@@ -110,4 +132,3 @@ class Dataset(object):
         # normalize input [0 ~ 255] ==> [-1 ~ 1]
         r = (r / self.image_max_value - 0.5) * 2
         return r
-
