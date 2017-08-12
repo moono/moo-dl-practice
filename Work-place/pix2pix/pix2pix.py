@@ -324,12 +324,10 @@ class Pix2Pix(object):
         #                            self.learning_rate,
         #                            self.beta1)
 
-def main():
+def main(do_train=True):
     assets_dir = './assets/'
     if not os.path.isdir(assets_dir):
         os.mkdir(assets_dir)
-
-    do_train = False
 
     # hyper parameters
     learning_rate = 0.0002
@@ -352,6 +350,7 @@ def main():
         print('Elapsed time: ', total_time)
         # 200 epochs: 7173.71
         # 200 epochs: 8563.10
+        # 200 epochs: 11520.13
 
 
         fig, ax = plt.subplots()
@@ -366,73 +365,9 @@ def main():
 
     return 0
 
-# def test():
-#     # sess = tf.InteractiveSession()
-#     # t = tf.zeros([64, 64, 64, 128], dtype=tf.float32)
-#     #
-#     # w_init = tf.random_normal_initializer(mean=0.0, stddev=0.02)
-#     # # l1 = tf.layers.conv2d(t, filters=512, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init, use_bias=False)
-#     # l1 = tf.layers.conv2d_transpose(t, filters=64, kernel_size=4, strides=2, padding='same', kernel_initializer=w_init,
-#     #                                 use_bias=False)
-#     #
-#     # print(l1.shape)
-#     #
-#     # sess.close()
-#
-#     batch_size = 1
-#     train_input_image_dir = '../Data_sets/facades/train/'
-#     direction = 'BtoA'
-#     my_dataset = Dataset(train_input_image_dir, direction=direction)
-#     # batch_images_tuple = my_dataset.get_next_batch(batch_size)
-#     #
-#     # a = [x for x, y in batch_images_tuple]
-#     # b = [y for x, y in batch_images_tuple]
-#     # a = np.array(a)
-#     # b = np.array(b)
-#     # print(a.shape)
-#     # print(b.shape)
-#
-#     # steps = 0
-#     #
-#     # for ii in range(my_dataset.n_images // batch_size):
-#     #     steps += 1
-#     #
-#     #     # will return list of tuples [ (inputs, targets), (inputs, targets), ... , (inputs, targets)]
-#     #     batch_images_tuple = my_dataset.get_next_batch(batch_size)
-#     #
-#     #     a = [x for x, y in batch_images_tuple]
-#     #     b = [y for x, y in batch_images_tuple]
-#     #     a = np.array(a)
-#     #     b = np.array(b)
-#     #
-#     #     fig, ax = plt.subplots()
-#     #     # gen_image = a
-#     #     gen_image = np.squeeze(a, axis=0)
-#     #
-#     #     # de-normalize
-#     #     # Scale to 0-255
-#     #     gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
-#     #     ax.imshow(gen_image)
-#
-#     batch_images_tuple = my_dataset.get_next_batch(batch_size)
-#
-#     a = [x for x, y in batch_images_tuple]
-#     b = [y for x, y in batch_images_tuple]
-#     a = np.array(a)
-#     b = np.array(b)
-#
-#     fig, ax = plt.subplots()
-#     # gen_image = a
-#     gen_image = np.squeeze(a, axis=0)
-#
-#     # de-normalize
-#     # Scale to 0-255
-#     gen_image = (((gen_image - gen_image.min()) * 255) / (gen_image.max() - gen_image.min())).astype(np.uint8)
-#     ax.imshow(gen_image)
-#     plt.show('hold')
-
 if __name__ == '__main__':
-    main()
+    main(do_train=True)
+    main(do_train=False)
 
 
 

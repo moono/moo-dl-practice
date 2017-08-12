@@ -6,7 +6,7 @@ from scipy.misc import imresize
 
 # class for loading images & split image of the form [A|B] ==> (A, B)
 class Dataset(object):
-    def __init__(self, input_dir, convert_to_lab_color=False, direction='AtoB', scale_to=256):
+    def __init__(self, input_dir, convert_to_lab_color=False, direction='AtoB', scale_to=256, do_flip=False):
         if not os.path.exists(input_dir):
             raise Exception('input directory does not exists!!')
 
@@ -34,8 +34,15 @@ class Dataset(object):
         self.convert_to_lab_color = convert_to_lab_color
         self.direction = direction
         self.scale_to = scale_to
+        self.do_flip = do_flip
         self.batch_index = 0
         self.image_max_value = 255
+        self.crop_size = 256
+
+        # synchronize seed for image operations so that we do the same operations to both
+        # input and output images
+        seed = np.random.randint(0, 2 ** 31 - 1)
+        self.prng = np.random.RandomState(seed)
 
     def get_next_batch(self, batch_size):
         if (self.batch_index + batch_size) > self.n_images:
@@ -70,13 +77,10 @@ class Dataset(object):
                 a_image = im[:, :width // 2, :]
                 b_image = im[:, width // 2:, :]
 
-                # normalize input [0 ~ 255] ==> [-1 ~ 1]
-                a_image = (a_image / self.image_max_value - 0.5) * 2
-                b_image = (b_image / self.image_max_value - 0.5) * 2
-
-            if not (a_image.shape[1] == self.scale_to and b_image.shape[1] == self.scale_to):
-                a_image = imresize(a_image, (self.scale_to, self.scale_to))
-                b_image = imresize(b_image, (self.scale_to, self.scale_to))
+            # apply random flip, resize, random crop
+            random_val = self.prng.uniform(0, 1)
+            a_image = self.transform(a_image, random_val)
+            b_image = self.transform(b_image, random_val)
 
             if self.direction == 'AtoB':
                 inputs, targets = [a_image, b_image]
@@ -85,7 +89,25 @@ class Dataset(object):
             else:
                 raise Exception('Invalid direction')
 
-
             splitted.append((inputs, targets))
         return splitted
+
+    def transform(self, im, random_val):
+        r = im
+        if self.do_flip and random_val >= 0.5:
+            r = np.flip(r, axis=1)
+
+        if r.shape[0] is not self.scale_to or r.shape[1] is not self.scale_to:
+            r = imresize(r, [self.scale_to, self.scale_to])
+
+        offset_h = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.float32)
+        offset_w = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.float32)
+        if self.scale_to > self.crop_size:
+            r = r[offset_h:offset_h + self.crop_size, offset_w:offset_w + self.crop_size, :]
+        elif self.scale_to < self.crop_size:
+            raise Exception("scale size cannot be less than crop size")
+
+        # normalize input [0 ~ 255] ==> [-1 ~ 1]
+        r = (r / self.image_max_value - 0.5) * 2
+        return r
 
