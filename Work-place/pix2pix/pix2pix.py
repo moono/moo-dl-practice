@@ -124,34 +124,39 @@ def discriminator(inputs, targets, n_first_layer_filter=64, alpha=0.2, reuse=Fal
 
         # layer_5: [batch, 31, 31, 512] => [batch, 30, 30, 1], without batchnorm
         n_filter = 1
-        l5 = tf.layers.conv2d(l4, filters=n_filter, kernel_size=2, strides=1, padding='valid',
+        logits = tf.layers.conv2d(l4, filters=n_filter, kernel_size=2, strides=1, padding='valid',
                               kernel_initializer=w_init, use_bias=False)
-        out = tf.sigmoid(l5)
+        out = tf.sigmoid(logits)
 
-        return out
+        return out, logits
 
 def model_loss(gen_inputs, dis_inputs, dis_targets, out_channels, gan_weight=1.0, l1_weight=100.0):
     # get each model outputs
-    gen_output = generator(gen_inputs, out_channels, reuse=False, is_training=True)
-    predict_real = discriminator(dis_inputs, dis_targets, reuse=False, is_training=True)
-    predict_fake = discriminator(dis_inputs, gen_output, reuse=True, is_training=True)
+    g_model = generator(gen_inputs, out_channels, reuse=False, is_training=True)
+    d_model_real, d_logits_real = discriminator(dis_inputs, dis_targets, reuse=False, is_training=True)
+    d_model_fake, d_logits_fake = discriminator(dis_inputs, g_model, reuse=True, is_training=True)
 
-    # compute loss
-    # minimizing -tf.log will try to get inputs to 1
-    # predict_real => 1
-    # predict_fake => 0
-    eps = 1e-12
-    d_loss = tf.reduce_mean(-(tf.log(predict_real + eps) + tf.log(1 - predict_fake + eps)))
+    # compute losses
 
-    # predict_fake => 1
-    # abs(targets - outputs) => 0
-    gen_loss_GAN = tf.reduce_mean(-tf.log(predict_fake + eps))
-    gen_loss_L1 = tf.reduce_mean(tf.abs(dis_targets - gen_output))
-    g_loss = gen_loss_GAN * gan_weight + gen_loss_L1 * l1_weight
+    # discriminator loss
+    # d_loss = tf.reduce_mean(-(tf.log(predict_real + eps) + tf.log(1 - predict_fake + eps)))
+    d_loss_real = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(logits=d_logits_real, labels=tf.ones_like(d_model_real)))
+    d_loss_fake = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(logits=d_logits_fake, labels=tf.zeros_like(d_model_fake)))
+    d_loss = d_loss_real + d_loss_fake
 
-    return d_loss, gen_loss_GAN, gen_loss_L1, g_loss
+    # generator loss
+    # gen_loss_GAN = tf.reduce_mean(-tf.log(predict_fake + eps))
+    # gen_loss_L1 = tf.reduce_mean(tf.abs(dis_targets - gen_output))
+    gen_loss_gan = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(logits=d_logits_fake, labels=tf.ones_like(d_model_fake)))
+    gen_loss_l1 = tf.reduce_mean(tf.abs(dis_targets - g_model))
+    g_loss = gen_loss_gan * gan_weight + gen_loss_l1 * l1_weight
 
-def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
+    return d_loss, gen_loss_gan, gen_loss_l1, g_loss
+
+def model_opt(d_loss, g_loss, learning_rate, beta1):
     # Get weights and bias to update
     t_vars = tf.trainable_variables()
     d_vars = [var for var in t_vars if var.name.startswith('discriminator')]
@@ -163,27 +168,6 @@ def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
         g_train_opt = tf.train.AdamOptimizer(learning_rate, beta1=beta1).minimize(g_loss, var_list=g_vars)
 
     return d_train_opt, g_train_opt
-
-# def model_opt(d_loss, gen_loss_GAN, gen_loss_L1, g_loss, learning_rate, beta1):
-#     discrim_tvars = [var for var in tf.trainable_variables() if var.name.startswith("discriminator")]
-#     discrim_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-#     discrim_grads_and_vars = discrim_optim.compute_gradients(d_loss, var_list=discrim_tvars)
-#     d_train_opt = discrim_optim.apply_gradients(discrim_grads_and_vars)
-#
-#     with tf.control_dependencies([d_train_opt]):
-#         gen_tvars = [var for var in tf.trainable_variables() if var.name.startswith("generator")]
-#         gen_optim = tf.train.AdamOptimizer(learning_rate, beta1)
-#         gen_grads_and_vars = gen_optim.compute_gradients(g_loss, var_list=gen_tvars)
-#         gen_train = gen_optim.apply_gradients(gen_grads_and_vars)
-#
-#     ema = tf.train.ExponentialMovingAverage(decay=0.99)
-#     update_losses = ema.apply([d_loss, gen_loss_GAN, gen_loss_L1])
-#
-#     training_op = tf.group(update_losses, gen_train)
-#
-#     return training_op
-
-
 
 
 def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, print_every=30):
@@ -217,22 +201,21 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
                 }
                 d_opt_out = sess.run(net.d_train_opt, feed_dict=fd)
                 g_opt_out = sess.run(net.g_train_opt, feed_dict=fd)
-                # opt_out = sess.run(net.train_opt, feed_dict=fd)
 
                 if steps % print_every == 0:
                     # At the end of each epoch, get the losses and print them out
                     train_loss_d = net.d_loss.eval(fd)
                     train_loss_g = net.g_loss.eval(fd)
-                    train_loss_GAN = net.gen_loss_GAN.eval(fd)
-                    train_loss_L1 = net.gen_loss_L1.eval(fd)
+                    train_loss_gan = net.gen_loss_GAN.eval(fd)
+                    train_loss_l1 = net.gen_loss_L1.eval(fd)
 
                     print("Epoch {}/{}...".format(e + 1, epochs),
                           "Discriminator Loss: {:.4f}...".format(train_loss_d),
-                          "Generator Loss GAN: {:.4f}".format(train_loss_GAN),
-                          "Generator Loss L1: {:.4f}".format(train_loss_L1),
+                          "Generator Loss GAN: {:.4f}".format(train_loss_gan),
+                          "Generator Loss L1: {:.4f}".format(train_loss_l1),
                           "Generator Loss: {:.4f}".format(train_loss_g))
                     # Save losses to view after training
-                    losses.append((train_loss_d, train_loss_GAN))
+                    losses.append((train_loss_d, train_loss_gan))
 
             # save generated images on every epochs
             test_a = [x for x, y in test_image]
@@ -288,17 +271,9 @@ class Pix2Pix(object):
                                                                                    self.gan_weight,
                                                                                    self.l1_weight)
         self.d_train_opt, self.g_train_opt = model_opt(self.d_loss,
-                                                       self.gen_loss_GAN,
-                                                       self.gen_loss_L1,
                                                        self.g_loss,
                                                        self.learning_rate,
                                                        self.beta1)
-        # self.train_opt = model_opt(self.d_loss,
-        #                            self.gen_loss_GAN,
-        #                            self.gen_loss_L1,
-        #                            self.g_loss,
-        #                            self.learning_rate,
-        #                            self.beta1)
 
 def main(do_train=True):
     assets_dir = './assets/'
