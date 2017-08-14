@@ -28,7 +28,7 @@ def save_result(image_fn, gen_image, input_image=None, target_image=None):
 
 # class for loading images & split image of the form [A|B] ==> (A, B)
 class Dataset(object):
-    def __init__(self, input_dir, convert_to_lab_color=False, direction='AtoB', scale_to=256, do_flip=False):
+    def __init__(self, input_dir, convert_to_lab_color=False, direction='AtoB', do_flip=False):
         if not os.path.exists(input_dir):
             raise Exception('input directory does not exists!!')
 
@@ -55,7 +55,7 @@ class Dataset(object):
         self.n_images = len(self.image_files)
         self.convert_to_lab_color = convert_to_lab_color
         self.direction = direction
-        self.scale_to = scale_to
+        self.scale_to = 286
         self.do_flip = do_flip
         self.batch_index = 0
         self.image_max_value = 255
@@ -116,14 +116,17 @@ class Dataset(object):
 
     def transform(self, im, random_val):
         r = im
+
+        # perform random flip
         if self.do_flip and random_val >= 0.5:
             r = np.flip(r, axis=1)
 
-        if r.shape[0] is not self.scale_to or r.shape[1] is not self.scale_to:
-            r = imresize(r, [self.scale_to, self.scale_to])
+        # resize to add random jitter
+        r = imresize(r, [self.scale_to, self.scale_to])
 
-        offset_h = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.float32)
-        offset_w = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.float32)
+        # randomly crop back to original size
+        offset_h = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.int32)
+        offset_w = np.floor(self.prng.uniform(0, self.scale_to - self.crop_size + 1)).astype(np.int32)
         if self.scale_to > self.crop_size:
             r = r[offset_h:offset_h + self.crop_size, offset_w:offset_w + self.crop_size, :]
         elif self.scale_to < self.crop_size:
