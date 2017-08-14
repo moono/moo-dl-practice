@@ -115,10 +115,8 @@ def discriminator(inputs, targets, n_first_layer_filter=64, alpha=0.2, reuse=Fal
         l3 = tf.layers.batch_normalization(inputs=l3, training=is_training)
         l3 = tf.maximum(alpha * l3, l3)
 
+        # option 1. try to make same as possible in paper(same channel same receptive field size)
         # layer_4: [batch, 32, 32, 256] => [batch, 31, 31, 512], with batchnorm
-        # n_filter = n_first_layer_filter * 8
-        # l4 = tf.layers.conv2d(l3, filters=n_filter, kernel_size=4, strides=1, padding='same',
-        #                       kernel_initializer=w_init, use_bias=False)
         filter_4 = tf.get_variable('filter_4', [4, 4, n_first_layer_filter * 4, n_first_layer_filter * 8],
                                    dtype=tf.float32, initializer=w_init)
         padding_4 = tf.pad(l3, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
@@ -127,14 +125,23 @@ def discriminator(inputs, targets, n_first_layer_filter=64, alpha=0.2, reuse=Fal
         l4 = tf.maximum(alpha * l4, l4)
 
         # layer_5: [batch, 31, 31, 512] => [batch, 30, 30, 1], without batchnorm
-        # n_filter = 1
-        # logits = tf.layers.conv2d(l4, filters=n_filter, kernel_size=4, strides=1, padding='same',
-        #                           kernel_initializer=w_init, use_bias=False)
         filter_5 = tf.get_variable('filter_5', [4, 4, n_first_layer_filter * 8, 1],
                                    dtype=tf.float32, initializer=w_init)
         padding_5 = tf.pad(l4, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="CONSTANT")
         logits = tf.nn.conv2d(padding_5, filter_5, [1, 1, 1, 1], padding='VALID')
         out = tf.sigmoid(logits)
+
+        # # option 2. try to follow tf.layer.conv2d() only match receptive field size
+        # # layer_4: [batch, 32, 32, 256] => [batch, 29, 29, 512], with batchnorm
+        # n_filter = n_first_layer_filter * 8
+        # l4 = tf.layers.conv2d(l3, filters=n_filter, kernel_size=4, strides=1, padding='valid',
+        #                       kernel_initializer=w_init, use_bias=False)
+        #
+        # # layer_5: [batch, 29, 29, 512] => [batch, 26, 26, 1], without batchnorm
+        # n_filter = 1
+        # logits = tf.layers.conv2d(l4, filters=n_filter, kernel_size=4, strides=1, padding='valid',
+        #                           kernel_initializer=w_init, use_bias=False)
+        # out = tf.sigmoid(logits)
 
         return out, logits
 
@@ -186,7 +193,7 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
     saver = tf.train.Saver()
 
     # prepare dataset
-    train_dataset = helper.Dataset(train_input_image_dir, convert_to_lab_color=False, direction=direction)
+    train_dataset = helper.Dataset(train_input_image_dir, convert_to_lab_color=False, direction=direction, is_test=False)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -307,10 +314,6 @@ def main(do_train=True):
         end_time = time.time()
         total_time = end_time - start_time
         print('Elapsed time: ', total_time)
-        # 200 epochs: 7173.71
-        # 200 epochs: 8563.10
-        # 200 epochs: 11520.13
-
 
         fig, ax = plt.subplots()
         losses = np.array(losses)
