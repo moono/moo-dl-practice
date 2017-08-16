@@ -185,7 +185,7 @@ def model_opt(d_loss, g_loss, learning_rate, beta1):
     return d_train_opt, g_train_opt
 
 
-def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, print_every=30):
+def train(net, epochs, batch_size, train_input_image_dir, test_image, direction, dataset_name, print_every=30):
     losses = []
     steps = 0
 
@@ -240,7 +240,8 @@ def train(net, epochs, batch_size, train_input_image_dir, test_image, direction,
             image_fn = './assets/epoch_{:d}_tf.png'.format(e)
             helper.save_result(image_fn, gen_image)
 
-        saver.save(sess, './checkpoints/pix2pix.ckpt')
+        ckpt_fn = './checkpoints/pix2pix-{}.ckpt'.format(dataset_name)
+        saver.save(sess, ckpt_fn)
 
     return losses
 
@@ -262,7 +263,6 @@ def test(net, test_input_image_dir, direction):
             gen_image = sess.run(generator(net.gen_inputs, net.input_channel, reuse=True, is_training=True),
                                  feed_dict={net.gen_inputs: test_a})
 
-            # save_result(gen_image, image_fn, image_title=None, input_image=None, target_image=None):
             image_fn = './assets/test_result{:d}_tf.png'.format(ii)
             helper.save_result(image_fn, gen_image, input_image=test_a, target_image=test_b)
 
@@ -301,16 +301,21 @@ def main(do_train=True):
     batch_size = 1
     pix2pix = Pix2Pix(learning_rate)
 
-    train_input_image_dir = '../Data_sets/facades/train/'
-    test_input_image_dir = '../Data_sets/facades/test/'
+    # configure parameters
+    dataset_name = 'cityscapes'
+    train_name = 'train'
+    test_name = 'val'
     direction = 'BtoA'
+
+    train_input_image_dir = '../Data_sets/{}/{}/'.format(dataset_name, train_name)
+    test_input_image_dir = '../Data_sets/{}/{}/'.format(dataset_name, test_name)
 
     if do_train:
         test_dataset = helper.Dataset(test_input_image_dir, convert_to_lab_color=False, direction=direction, is_test=True)
         test_single_image = test_dataset.get_image_by_index(0)
 
         start_time = time.time()
-        losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir, test_single_image, direction)
+        losses = train(pix2pix, n_epochs, batch_size, train_input_image_dir, test_single_image, direction, dataset_name)
         end_time = time.time()
         total_time = end_time - start_time
         print('Elapsed time: ', total_time)
